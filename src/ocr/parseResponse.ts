@@ -25,8 +25,7 @@ export function parseExtractionResponse(rawJson: string): ExtractionResult {
   return {
     documentType: data.documentType,
     confidence: data.confidence,
-    driverLicense: data.documentType === "driver_license" ? data.driverLicense : undefined,
-    insurance: data.documentType === "insurance" ? data.insurance : undefined,
+    vehicle: data.documentType !== "unknown" ? data.vehicle : undefined,
     lowConfidenceFields: data.lowConfidenceFields,
     rawText: data.rawText,
   };

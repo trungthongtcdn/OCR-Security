@@ -1,56 +1,29 @@
 import { Type, type Schema } from "@google/genai";
 
-const driverLicenseSchema: Schema = {
+const vehicleSchema: Schema = {
   type: Type.OBJECT,
   properties: {
-    fullName: { type: Type.STRING, description: "Ho va ten" },
-    dateOfBirth: { type: Type.STRING, description: "Ngay sinh, dd/mm/yyyy" },
-    licenseNumber: { type: Type.STRING, description: "So GPLX" },
-    licenseClass: { type: Type.STRING, description: "Hang GPLX, vi du A1, B2, C" },
-    nationalIdNumber: { type: Type.STRING, description: "So CMND/CCCD neu co in tren GPLX" },
-    address: { type: Type.STRING, description: "Dia chi / noi cu tru" },
-    issueDate: { type: Type.STRING, description: "Ngay cap, dd/mm/yyyy" },
-    expiryDate: { type: Type.STRING, description: "Ngay het han / co gia tri den, dd/mm/yyyy" },
-    issuePlace: { type: Type.STRING, description: "Noi cap" },
-  },
-  required: [
-    "fullName",
-    "dateOfBirth",
-    "licenseNumber",
-    "licenseClass",
-    "nationalIdNumber",
-    "address",
-    "issueDate",
-    "expiryDate",
-    "issuePlace",
-  ],
-};
-
-const insuranceSchema: Schema = {
-  type: Type.OBJECT,
-  properties: {
-    ownerName: { type: Type.STRING, description: "Ten chu xe / ben mua bao hiem" },
-    vehiclePlate: { type: Type.STRING, description: "Bien so xe" },
-    vehicleType: { type: Type.STRING, description: "Loai xe / nhan hieu / so cho" },
+    vehiclePlate: { type: Type.STRING, description: "Bien so xe / bien kiem soat" },
+    vehicleType: { type: Type.STRING, description: "Loai xe, vi du: o to con, xe tai, xe khach..." },
+    seatCount: { type: Type.STRING, description: "So cho ngoi" },
+    ownerName: { type: Type.STRING, description: "Ho ten chu xe" },
+    address: { type: Type.STRING, description: "Dia chi chu xe" },
     chassisNumber: { type: Type.STRING, description: "So khung" },
     engineNumber: { type: Type.STRING, description: "So may" },
-    insuranceCompany: { type: Type.STRING, description: "Cong ty bao hiem" },
-    policyNumber: { type: Type.STRING, description: "So giay chung nhan bao hiem / hop dong" },
-    effectiveDate: { type: Type.STRING, description: "Hieu luc tu ngay, dd/mm/yyyy" },
-    expiryDate: { type: Type.STRING, description: "Hieu luc den ngay, dd/mm/yyyy" },
-    premium: { type: Type.STRING, description: "Phi bao hiem (neu co ghi tren giay)" },
+    loadCapacity: {
+      type: Type.STRING,
+      description: "Tai trong (thuong tinh bang tan). De trong hoac ghi dung ky hieu tren giay (vi du 'X') neu khong ap dung",
+    },
   },
   required: [
-    "ownerName",
     "vehiclePlate",
     "vehicleType",
+    "seatCount",
+    "ownerName",
+    "address",
     "chassisNumber",
     "engineNumber",
-    "insuranceCompany",
-    "policyNumber",
-    "effectiveDate",
-    "expiryDate",
-    "premium",
+    "loadCapacity",
   ],
 };
 
@@ -59,12 +32,11 @@ export const extractionResponseSchema: Schema = {
   properties: {
     documentType: {
       type: Type.STRING,
-      enum: ["driver_license", "insurance", "unknown"],
+      enum: ["vehicle_registration", "insurance", "unknown"],
       description: "Loai giay to nhan dien duoc",
     },
     confidence: { type: Type.NUMBER, description: "Do tin cay tong the, 0 den 1" },
-    driverLicense: driverLicenseSchema,
-    insurance: insuranceSchema,
+    vehicle: vehicleSchema,
     lowConfidenceFields: {
       type: Type.ARRAY,
       items: { type: Type.STRING },

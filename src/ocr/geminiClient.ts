@@ -10,6 +10,13 @@ export interface ImageInput {
   mimeType: string;
 }
 
+/**
+ * Model Gemini manh nhat hien dang GA (khong con tang "Pro" GA cong khai tinh den luc viet code
+ * nay), dung de tu dong doc lai anh khi lan doc dau tien co truong do tin cay thap (thuong la
+ * do chu viet tay) - bat ke Admin dang cau hinh model nao lam mac dinh de tiet kiem chi phi.
+ */
+export const PREMIUM_GEMINI_MODEL = "gemini-3.6-flash";
+
 export class GeminiOcrClient {
   private readonly ai: GoogleGenAI;
 

@@ -45,9 +45,9 @@ describe("QuotaService", () => {
 
   it("blocks OCR once employee monthly quota is exhausted", () => {
     const emp = quotaService.registerOrGetEmployee("zalo-1", "A");
-    quotaService.consumeOnSuccess(emp, "driver_license");
-    quotaService.consumeOnSuccess(emp, "driver_license");
-    quotaService.consumeOnSuccess(emp, "driver_license");
+    quotaService.consumeOnSuccess(emp, "vehicle_registration");
+    quotaService.consumeOnSuccess(emp, "vehicle_registration");
+    quotaService.consumeOnSuccess(emp, "vehicle_registration");
 
     const result = quotaService.checkBeforeOcr(emp);
     expect(result.allowed).toBe(false);
@@ -82,7 +82,7 @@ describe("QuotaService", () => {
 
   it("does not deduct quota on failed OCR attempts", () => {
     const emp = quotaService.registerOrGetEmployee("zalo-1", "A");
-    quotaService.recordFailure(emp, "driver_license", "gemini timeout");
+    quotaService.recordFailure(emp, "vehicle_registration", "gemini timeout");
     const status = quotaService.getStatus(emp);
     expect(status.employeeUsed).toBe(0);
     expect(status.employeeRemaining).toBe(3);
@@ -90,7 +90,7 @@ describe("QuotaService", () => {
 
   it("formats a human-readable Vietnamese status message", () => {
     const emp = quotaService.registerOrGetEmployee("zalo-1", "Nguyen Van A");
-    quotaService.consumeOnSuccess(emp, "driver_license");
+    quotaService.consumeOnSuccess(emp, "vehicle_registration");
     const status = quotaService.getStatus(emp);
     const msg = quotaService.formatStatusMessage(status);
     expect(msg).toContain("Nguyen Van A");

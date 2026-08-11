@@ -1,8 +1,10 @@
 # OCR-Security
 
-Tu dong boc tach thong tin tu anh **Giay phep lai xe (GPLX)** va **Giay chung nhan bao hiem xe cu**
-ma khach hang gui qua Zalo, luu vao **Google Sheets**, va quan ly **han muc OCR** theo tung
-nhan vien kinh doanh (NVKD) va toan cong ty.
+Tu dong boc tach thong tin tu anh **Giay dang ky xe (ca vet)** va **Giay chung nhan bao hiem xe**
+ma khach hang gui qua Zalo, luu vao **1 Google Sheet duy nhat**, va quan ly **han muc OCR** theo
+tung nhan vien kinh doanh (NVKD) va toan cong ty. Anh khac 2 loai giay to nay (CMND/CCCD, GPLX,
+anh ca nhan khong lien quan...) se **bi bo qua hoan toan, khong tra loi** - tranh gay nhieu khi
+NVKD/KH nhan tin ca nhan qua lai qua cung nick Zalo Admin.
 
 ## Luong hoat dong (flow)
 
@@ -12,13 +14,16 @@ KH --(gui anh)--> NVKD --(forward anh)--> Zalo ca nhan cua Admin (da dang nhap v
                                                     v
                                     Bot lang nghe tin nhan tren Zalo Admin
                                                     |
-                                    Anh --> Gemini OCR (doc ca chu in + chu viet tay)
+                                    Anh --> Gemini OCR (doc ca chu in + chu viet tay,
+                                             tu dong doc lai bang model manh hon neu nghi ngo)
+                                                    |
+                                    Khong phai Dang ky xe/Bao hiem xe? --> bo qua, khong tra loi
                                                     |
                                     Kiem tra han muc NVKD + han muc cong ty
                                                     |
-                                    Ghi ket qua vao Google Sheets (tab GPLX / BaoHiem)
+                                    Ghi ket qua vao 1 Google Sheet (co cot "Loai giay to")
                                                     |
-                                    Tra loi lai NVKD ngay trong hoi thoai Zalo
+                                    Tra loi lai NVKD ngay trong hoi thoai Zalo (du 8 truong)
 ```
 
 Toan bo cau hinh (Gemini API key, Google Sheets, dang nhap Zalo, han muc, danh sach NVKD/Admin)
@@ -92,10 +97,11 @@ Trang Admin co 4 tab:
    tru khi Admin bam "Dang xuat".
 2. **Cau hinh he thong**:
    - **Gemini**: dan API key (lay tai https://aistudio.google.com/apikey) va chon model.
-   - **Google Sheets**: dien Google Sheet ID (trong URL sheet), ten 2 tab (GPLX/BaoHiem), va
-     **dan noi dung file JSON cua Google service account** vao o van ban (khong can upload file,
-     khong can dat file tren server). Trang se hien email cua service account de ban **Share**
-     Google Sheet cho email do voi quyen Editor. Ung dung tu tao tab + dong tieu de neu chua co.
+   - **Google Sheets**: dien Google Sheet ID (trong URL sheet), ten 1 tab luu du lieu (dung chung
+     cho ca dang ky xe va bao hiem, phan biet bang cot "Loai giay to"), va **dan noi dung file JSON
+     cua Google service account** vao o van ban (khong can upload file, khong can dat file tren
+     server). Trang se hien email cua service account de ban **Share** Google Sheet cho email do
+     voi quyen Editor. Ung dung tu tao tab + dong tieu de neu chua co.
    - **Han muc mac dinh**: han muc toan cong ty / thang va han muc mac dinh cho 1 NVKD moi.
 3. **NVKD & han muc**: bang danh sach NVKD (tu dong xuat hien sau khi ho nhan tin lan dau). Admin
    khong can biet/nhap Zalo ID thu cong - co the **them NVKD bang so dien thoai**, he thong tu tra
@@ -126,7 +132,9 @@ npm run typecheck
 
 **NVKD:**
 - `han muc` hoac `/quota`: xem han muc OCR con lai cua chinh minh
-- Gui anh GPLX / giay bao hiem xe de OCR tu dong
+- Gui anh Giay dang ky xe (ca vet) hoac Giay chung nhan bao hiem xe de OCR tu dong. He thong tra ve
+  du 8 truong: Bien so xe, Loai xe, So cho ngoi, Ho ten chu xe, Dia chi, So khung, So may, Tai trong.
+  Anh khac 2 loai giay to nay se bi bo qua, khong tra loi.
 
 **Admin (NVKD duoc danh dau "La Admin" trong trang quan tri):**
 - `/quota all`: xem han muc tat ca NVKD
@@ -150,7 +158,7 @@ khong can job dat lai). Han muc bi chan neu **het han muc ca nhan HOAC het han m
   **khoa tai khoan** dung theo cach nay bat cu luc nao - **khong dung tai khoan Zalo chinh/quan trong**
   cho "nick Admin", va can nguoi that thinh thoang tuong tac binh thuong de giam rui ro bi danh dau bot.
   Neu can do on dinh lau dai/quy mo lon, nen chuyen sang **Zalo Official Account (OA)** voi API chinh thuc.
-- **Du lieu ca nhan nhay cam:** GPLX va giay bao hiem chua CMND/CCCD, ho ten, ngay sinh, dia chi -
+- **Du lieu ca nhan nhay cam:** giay dang ky xe va giay bao hiem chua ho ten, dia chi, thong tin xe -
   thuoc pham vi **du lieu ca nhan** theo Nghi dinh 13/2023/ND-CP. Can gioi han quyen truy cap Google
   Sheet (chi Admin/nguoi co trach nhiem), can nhac ma hoa/xoa du lieu khi khong con can thiet, va co
   thong bao/dong y phu hop voi khach hang.
@@ -176,6 +184,15 @@ gan het cac OCR engine truyen thong mien phi:
 phi hon nua, co the doi sang `gemini-3.5-flash-lite` trong tab Cau hinh he thong. Luu y: cac model
 doi cu (`gemini-2.5-*`, `gemini-2.0-*`, `gemini-1.5-*`) da bi Google ngung phuc vu - he thong tu dong
 chuyen ve `gemini-3.6-flash` neu phat hien cau hinh dang tro toi mot model da retired.
+
+**Nang cao chat luong chu viet tay:** neu lan doc dau tien co truong nao Gemini tu danh dau "do tin
+cay thap" (`lowConfidenceFields`, thuong roi vao chu viet tay), he thong **tu dong doc lai anh do
+bang `gemini-3.6-flash`** (model manh nhat hien dang GA cua Google, tinh den luc viet code nay chua
+co tang "Pro" GA cong khai de nang cap cao hon) va giu ket qua nao it truong nghi ngo hon - kho hon
+la khong retry gi (neu Admin da chon san `gemini-3.6-flash` lam mac dinh thi khong doc lai, tranh
+ton gap doi chi phi). Neu chat viet tay van sai nhieu sau khi da co retry nay, cach hieu qua nhat
+tiep theo thuong la **cai thien chat luong anh dau vao** (chup thang, du sang, khong bi loa/mo) hon
+la doi model - co the can nhac them buoc nhac NVKD chup lai neu anh qua mo/toi truoc khi OCR.
 
 ## Gioi han cua MVP / huong mo rong
 

@@ -1,5 +1,5 @@
 import type { SettingsRepo } from "../db/settingsRepo.js";
-import { GeminiOcrClient } from "../ocr/geminiClient.js";
+import { GeminiOcrClient, PREMIUM_GEMINI_MODEL } from "../ocr/geminiClient.js";
 import { OcrPipeline } from "../pipeline/ocrPipeline.js";
 import type { QuotaService } from "../quota/quotaService.js";
 import { GoogleSheetsClient } from "../sheets/googleSheetsClient.js";
@@ -29,8 +29,7 @@ export class ServiceRegistry {
       this.settingsRepo.getGeminiModel(),
       this.settingsRepo.getGoogleSheetId(),
       this.settingsRepo.getGoogleServiceAccountJsonRaw(),
-      this.settingsRepo.getSheetTabLicense(),
-      this.settingsRepo.getSheetTabInsurance(),
+      this.settingsRepo.getSheetTab(),
     ]);
   }
 
@@ -46,17 +45,17 @@ export class ServiceRegistry {
       return this.cachedPipeline;
     }
 
-    const gemini = new GeminiOcrClient(
-      this.settingsRepo.getGeminiApiKey()!,
-      this.settingsRepo.getGeminiModel(),
-    );
+    const apiKey = this.settingsRepo.getGeminiApiKey()!;
+    const configuredModel = this.settingsRepo.getGeminiModel();
+    const gemini = new GeminiOcrClient(apiKey, configuredModel);
+    const premiumGemini =
+      configuredModel === PREMIUM_GEMINI_MODEL ? gemini : new GeminiOcrClient(apiKey, PREMIUM_GEMINI_MODEL);
     const sheets = new GoogleSheetsClient(
       this.settingsRepo.getGoogleServiceAccountCredentials()!,
       this.settingsRepo.getGoogleSheetId()!,
     );
-    const pipeline = new OcrPipeline(gemini, sheets, this.quotaService, {
-      tabLicense: this.settingsRepo.getSheetTabLicense(),
-      tabInsurance: this.settingsRepo.getSheetTabInsurance(),
+    const pipeline = new OcrPipeline(gemini, premiumGemini, sheets, this.quotaService, {
+      tab: this.settingsRepo.getSheetTab(),
     });
 
     this.cachedSignature = signature;

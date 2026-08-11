@@ -1,7 +1,7 @@
 import type { DB } from "./database.js";
 
 export type UsageStatus = "success" | "failed";
-export type DocType = "driver_license" | "insurance" | "unknown";
+export type DocType = "vehicle_registration" | "insurance" | "unknown";
 
 export function currentMonthKey(date: Date = new Date()): string {
   const y = date.getUTCFullYear();

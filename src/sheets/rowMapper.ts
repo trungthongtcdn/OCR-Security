@@ -1,4 +1,4 @@
-import type { ExtractionResult } from "../ocr/types.js";
+import type { DocTypeValue, ExtractionResult } from "../ocr/types.js";
 
 export interface RowMetadata {
   timestamp: string;
@@ -6,81 +6,46 @@ export interface RowMetadata {
   employeeZaloId: string;
 }
 
-export const LICENSE_HEADER = [
+export const VEHICLE_HEADER = [
   "Thoi gian",
   "NVKD",
   "Zalo ID NVKD",
-  "Ho ten",
-  "Ngay sinh",
-  "So GPLX",
-  "Hang",
-  "So CMND/CCCD",
-  "Dia chi",
-  "Ngay cap",
-  "Ngay het han",
-  "Noi cap",
-  "Do tin cay",
-  "Truong can kiem tra lai",
-];
-
-export const INSURANCE_HEADER = [
-  "Thoi gian",
-  "NVKD",
-  "Zalo ID NVKD",
-  "Chu xe",
-  "Bien so",
+  "Loai giay to",
+  "Bien so xe",
   "Loai xe",
+  "So cho ngoi",
+  "Ho ten chu xe",
+  "Dia chi",
   "So khung",
   "So may",
-  "Cong ty bao hiem",
-  "So giay CN/HD",
-  "Hieu luc tu",
-  "Hieu luc den",
-  "Phi bao hiem",
+  "Tai trong",
   "Do tin cay",
   "Truong can kiem tra lai",
 ];
 
-/** Chuyen ExtractionResult (documentType = driver_license) thanh 1 hang cho Google Sheet. Tra ve undefined neu khong phai loai nay hoac thieu du lieu. */
-export function toLicenseRow(result: ExtractionResult, meta: RowMetadata): unknown[] | undefined {
-  if (result.documentType !== "driver_license" || !result.driverLicense) return undefined;
-  const f = result.driverLicense;
-  return [
-    meta.timestamp,
-    meta.employeeName,
-    meta.employeeZaloId,
-    f.fullName,
-    f.dateOfBirth,
-    f.licenseNumber,
-    f.licenseClass,
-    f.nationalIdNumber,
-    f.address,
-    f.issueDate,
-    f.expiryDate,
-    f.issuePlace,
-    result.confidence,
-    result.lowConfidenceFields.join(", "),
-  ];
-}
+export const DOC_TYPE_LABEL: Record<DocTypeValue, string> = {
+  vehicle_registration: "Dang ky xe",
+  insurance: "Bao hiem xe",
+  unknown: "Khong xac dinh",
+};
 
-/** Chuyen ExtractionResult (documentType = insurance) thanh 1 hang cho Google Sheet. Tra ve undefined neu khong phai loai nay hoac thieu du lieu. */
-export function toInsuranceRow(result: ExtractionResult, meta: RowMetadata): unknown[] | undefined {
-  if (result.documentType !== "insurance" || !result.insurance) return undefined;
-  const f = result.insurance;
+/** Chuyen ExtractionResult (vehicle_registration hoac insurance) thanh 1 hang cho Google Sheet chung. Tra ve undefined neu thieu du lieu xe. */
+export function toVehicleRow(result: ExtractionResult, meta: RowMetadata): unknown[] | undefined {
+  if (!result.vehicle) return undefined;
+  const f = result.vehicle;
   return [
     meta.timestamp,
     meta.employeeName,
     meta.employeeZaloId,
-    f.ownerName,
+    DOC_TYPE_LABEL[result.documentType],
     f.vehiclePlate,
     f.vehicleType,
+    f.seatCount,
+    f.ownerName,
+    f.address,
     f.chassisNumber,
     f.engineNumber,
-    f.insuranceCompany,
-    f.policyNumber,
-    f.effectiveDate,
-    f.expiryDate,
-    f.premium,
+    f.loadCapacity,
     result.confidence,
     result.lowConfidenceFields.join(", "),
   ];

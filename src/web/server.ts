@@ -107,8 +107,7 @@ export function createWebServer(deps: WebServerDeps): Express {
       googleSheetId: settingsRepo.getGoogleSheetId() ?? "",
       googleServiceAccountSet: Boolean(settingsRepo.getGoogleServiceAccountJsonRaw()),
       googleServiceAccountEmail: settingsRepo.getGoogleServiceAccountCredentials()?.client_email ?? "",
-      sheetTabLicense: settingsRepo.getSheetTabLicense(),
-      sheetTabInsurance: settingsRepo.getSheetTabInsurance(),
+      sheetTab: settingsRepo.getSheetTab(),
       companyMonthlyQuota: companyRepo.getMonthlyQuota(),
       defaultEmployeeMonthlyQuota: settingsRepo.getDefaultEmployeeMonthlyQuota(),
     });
@@ -133,11 +132,8 @@ export function createWebServer(deps: WebServerDeps): Express {
         }
         settingsRepo.setGoogleServiceAccountJsonRaw(body.googleServiceAccountJson.trim());
       }
-      if (typeof body.sheetTabLicense === "string" && body.sheetTabLicense.trim()) {
-        settingsRepo.setSheetTabLicense(body.sheetTabLicense.trim());
-      }
-      if (typeof body.sheetTabInsurance === "string" && body.sheetTabInsurance.trim()) {
-        settingsRepo.setSheetTabInsurance(body.sheetTabInsurance.trim());
+      if (typeof body.sheetTab === "string" && body.sheetTab.trim()) {
+        settingsRepo.setSheetTab(body.sheetTab.trim());
       }
       if (typeof body.companyMonthlyQuota === "number" && Number.isFinite(body.companyMonthlyQuota)) {
         companyRepo.setMonthlyQuota(Math.max(0, Math.trunc(body.companyMonthlyQuota)));

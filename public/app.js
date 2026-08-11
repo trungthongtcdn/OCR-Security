@@ -99,8 +99,7 @@ async function loadSettings() {
   document.getElementById("gemini-model").value = s.geminiModel;
 
   document.getElementById("sheet-id").value = s.googleSheetId;
-  document.getElementById("sheet-tab-license").value = s.sheetTabLicense;
-  document.getElementById("sheet-tab-insurance").value = s.sheetTabInsurance;
+  document.getElementById("sheet-tab").value = s.sheetTab;
 
   const saBadge = document.getElementById("sa-status");
   saBadge.textContent = s.googleServiceAccountSet ? "Da cau hinh" : "Chua cau hinh";
@@ -133,8 +132,7 @@ document.getElementById("form-sheets").addEventListener("submit", async (e) => {
   try {
     const body = {
       googleSheetId: document.getElementById("sheet-id").value.trim(),
-      sheetTabLicense: document.getElementById("sheet-tab-license").value.trim(),
-      sheetTabInsurance: document.getElementById("sheet-tab-insurance").value.trim(),
+      sheetTab: document.getElementById("sheet-tab").value.trim(),
     };
     const sa = document.getElementById("sa-json").value.trim();
     if (sa) body.googleServiceAccountJson = sa;

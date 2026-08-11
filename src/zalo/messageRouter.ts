@@ -45,7 +45,7 @@ export class MessageRouter {
   ): Promise<void> {
     const employee = this.quotaService.registerOrGetEmployee(senderId, senderName);
 
-    let reply: string;
+    let reply: string | undefined;
     try {
       const pipeline = this.serviceRegistry.getPipeline();
       const { buffer, mimeType } = await this.zaloSession.downloadImage(imageUrl);
@@ -53,7 +53,8 @@ export class MessageRouter {
         base64Data: buffer.toString("base64"),
         mimeType,
       });
-      reply = result.message;
+      // silent = anh khong phai giay dang ky xe/bao hiem xe -> bo qua, khong tra loi
+      reply = result.silent ? undefined : result.message;
     } catch (err) {
       logger.error({ err, senderId }, "loi khi xu ly anh tu Zalo");
       reply = err instanceof Error && err.message.includes("chua duoc cau hinh")
@@ -61,7 +62,9 @@ export class MessageRouter {
         : "Xin loi, khong tai duoc anh ban gui. Vui long thu gui lai.";
     }
 
-    await this.zaloSession.reply(message.threadId, message.type, reply);
+    if (reply) {
+      await this.zaloSession.reply(message.threadId, message.type, reply);
+    }
   }
 
   private async handleText(
@@ -149,7 +152,7 @@ export class MessageRouter {
     const lines = [
       "Cac lenh ho tro:",
       "- 'han muc' hoac /quota: xem han muc OCR con lai cua ban",
-      "- Gui anh GPLX hoac giay bao hiem xe de OCR tu dong",
+      "- Gui anh Giay dang ky xe (ca vet) hoac Giay chung nhan bao hiem xe de OCR tu dong",
     ];
     if (isAdmin) {
       lines.push(

@@ -1,3 +1,4 @@
+import { PREMIUM_GEMINI_MODEL } from "../ocr/geminiClient.js";
 import type { DB } from "./database.js";
 
 export interface ServiceAccountCredentials {
@@ -23,8 +24,7 @@ const KEYS = {
   geminiModel: "gemini_model",
   googleSheetId: "google_sheet_id",
   googleServiceAccountJson: "google_service_account_json",
-  sheetTabLicense: "sheet_tab_license",
-  sheetTabInsurance: "sheet_tab_insurance",
+  sheetTab: "sheet_tab",
   defaultEmployeeMonthlyQuota: "default_employee_monthly_quota",
 } as const;
 
@@ -56,7 +56,7 @@ export class SettingsRepo {
 
   getGeminiModel(): string {
     const stored = this.get(KEYS.geminiModel);
-    if (!stored || RETIRED_GEMINI_MODELS.has(stored)) return "gemini-3.6-flash";
+    if (!stored || RETIRED_GEMINI_MODELS.has(stored)) return PREMIUM_GEMINI_MODEL;
     return stored;
   }
   setGeminiModel(value: string): void {
@@ -82,18 +82,11 @@ export class SettingsRepo {
     return JSON.parse(raw) as ServiceAccountCredentials;
   }
 
-  getSheetTabLicense(): string {
-    return this.get(KEYS.sheetTabLicense) ?? "GPLX";
+  getSheetTab(): string {
+    return this.get(KEYS.sheetTab) ?? "DuLieuXe";
   }
-  setSheetTabLicense(value: string): void {
-    this.set(KEYS.sheetTabLicense, value);
-  }
-
-  getSheetTabInsurance(): string {
-    return this.get(KEYS.sheetTabInsurance) ?? "BaoHiem";
-  }
-  setSheetTabInsurance(value: string): void {
-    this.set(KEYS.sheetTabInsurance, value);
+  setSheetTab(value: string): void {
+    this.set(KEYS.sheetTab, value);
   }
 
   getDefaultEmployeeMonthlyQuota(): number {

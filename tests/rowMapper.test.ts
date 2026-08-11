@@ -1,81 +1,70 @@
 import { describe, expect, it } from "vitest";
-import { toInsuranceRow, toLicenseRow } from "../src/sheets/rowMapper.js";
+import { toVehicleRow } from "../src/sheets/rowMapper.js";
 import type { ExtractionResult } from "../src/ocr/types.js";
 
 const meta = { timestamp: "2026-08-11T10:00:00Z", employeeName: "Nguyen Van A", employeeZaloId: "zalo-1" };
 
 describe("rowMapper", () => {
-  it("maps a driver_license extraction to a sheet row", () => {
+  it("maps a vehicle_registration extraction to a sheet row", () => {
     const result: ExtractionResult = {
-      documentType: "driver_license",
+      documentType: "vehicle_registration",
       confidence: 0.9,
-      driverLicense: {
-        fullName: "Le Van C",
-        dateOfBirth: "01/01/1990",
-        licenseNumber: "123",
-        licenseClass: "B2",
-        nationalIdNumber: "",
+      vehicle: {
+        vehiclePlate: "29A-123.45",
+        vehicleType: "O to con",
+        seatCount: "5",
+        ownerName: "Le Van C",
         address: "",
-        issueDate: "",
-        expiryDate: "",
-        issuePlace: "",
+        chassisNumber: "RLN2US",
+        engineNumber: "1B22765",
+        loadCapacity: "",
       },
       lowConfidenceFields: ["address"],
       rawText: "",
     };
 
-    const row = toLicenseRow(result, meta);
+    const row = toVehicleRow(result, meta);
     expect(row).toBeDefined();
     const r = row!;
     expect(r[0]).toBe(meta.timestamp);
-    expect(r[3]).toBe("Le Van C");
-    expect(r[6]).toBe("B2");
+    expect(r[3]).toBe("Dang ky xe");
+    expect(r[4]).toBe("29A-123.45");
+    expect(r[7]).toBe("Le Van C");
     expect(r[r.length - 1]).toBe("address");
-  });
-
-  it("returns undefined for toLicenseRow when documentType is insurance", () => {
-    const result: ExtractionResult = {
-      documentType: "insurance",
-      confidence: 0.5,
-      lowConfidenceFields: [],
-      rawText: "",
-    };
-    expect(toLicenseRow(result, meta)).toBeUndefined();
   });
 
   it("maps an insurance extraction to a sheet row", () => {
     const result: ExtractionResult = {
       documentType: "insurance",
       confidence: 0.75,
-      insurance: {
-        ownerName: "Pham Thi D",
+      vehicle: {
         vehiclePlate: "30F-999.99",
-        vehicleType: "",
+        vehicleType: "O to con",
+        seatCount: "4",
+        ownerName: "Pham Thi D",
+        address: "TP.HCM",
         chassisNumber: "",
         engineNumber: "",
-        insuranceCompany: "PVI",
-        policyNumber: "PVI-001",
-        effectiveDate: "01/01/2024",
-        expiryDate: "01/01/2025",
-        premium: "",
+        loadCapacity: "X",
       },
       lowConfidenceFields: [],
       rawText: "",
     };
 
-    const row = toInsuranceRow(result, meta);
+    const row = toVehicleRow(result, meta);
     expect(row).toBeDefined();
+    expect(row?.[3]).toBe("Bao hiem xe");
     expect(row?.[4]).toBe("30F-999.99");
-    expect(row?.[8]).toBe("PVI");
+    expect(row?.[7]).toBe("Pham Thi D");
   });
 
-  it("returns undefined for toInsuranceRow when documentType is unknown", () => {
+  it("returns undefined when there is no vehicle data (unknown documentType)", () => {
     const result: ExtractionResult = {
       documentType: "unknown",
       confidence: 0.1,
       lowConfidenceFields: [],
       rawText: "",
     };
-    expect(toInsuranceRow(result, meta)).toBeUndefined();
+    expect(toVehicleRow(result, meta)).toBeUndefined();
   });
 });

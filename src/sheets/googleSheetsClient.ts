@@ -1,6 +1,5 @@
 import { google, type sheets_v4 } from "googleapis";
 import type { ServiceAccountCredentials } from "../db/settingsRepo.js";
-import { INSURANCE_HEADER, LICENSE_HEADER } from "./rowMapper.js";
 
 export class GoogleSheetsClient {
   private sheetsApi: sheets_v4.Sheets | undefined;
@@ -57,5 +56,3 @@ export class GoogleSheetsClient {
     });
   }
 }
-
-export { INSURANCE_HEADER, LICENSE_HEADER };

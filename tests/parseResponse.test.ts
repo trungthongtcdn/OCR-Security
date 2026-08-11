@@ -2,29 +2,27 @@ import { describe, expect, it } from "vitest";
 import { InvalidExtractionResponseError, parseExtractionResponse } from "../src/ocr/parseResponse.js";
 
 describe("parseExtractionResponse", () => {
-  it("parses a valid driver_license response", () => {
+  it("parses a valid vehicle_registration response", () => {
     const raw = JSON.stringify({
-      documentType: "driver_license",
+      documentType: "vehicle_registration",
       confidence: 0.92,
-      driverLicense: {
-        fullName: "Nguyen Van A",
-        dateOfBirth: "01/01/1990",
-        licenseNumber: "123456789012",
-        licenseClass: "B2",
-        nationalIdNumber: "",
+      vehicle: {
+        vehiclePlate: "29A-123.45",
+        vehicleType: "O to con",
+        seatCount: "5",
+        ownerName: "Nguyen Van A",
         address: "Ha Noi",
-        issueDate: "01/01/2020",
-        expiryDate: "01/01/2030",
-        issuePlace: "",
+        chassisNumber: "RLN2US.HNLVNM076570",
+        engineNumber: "1B22.765PSA10XVDPHN08",
+        loadCapacity: "",
       },
       lowConfidenceFields: ["address"],
-      rawText: "GIAY PHEP LAI XE ...",
+      rawText: "GIAY DANG KY XE ...",
     });
 
     const result = parseExtractionResponse(raw);
-    expect(result.documentType).toBe("driver_license");
-    expect(result.driverLicense?.fullName).toBe("Nguyen Van A");
-    expect(result.insurance).toBeUndefined();
+    expect(result.documentType).toBe("vehicle_registration");
+    expect(result.vehicle?.ownerName).toBe("Nguyen Van A");
     expect(result.lowConfidenceFields).toEqual(["address"]);
   });
 
@@ -32,17 +30,15 @@ describe("parseExtractionResponse", () => {
     const raw = JSON.stringify({
       documentType: "insurance",
       confidence: 0.8,
-      insurance: {
-        ownerName: "Tran Thi B",
+      vehicle: {
         vehiclePlate: "29A-123.45",
-        vehicleType: "",
+        vehicleType: "O to con",
+        seatCount: "5",
+        ownerName: "Tran Thi B",
+        address: "",
         chassisNumber: "",
         engineNumber: "",
-        insuranceCompany: "Bao Viet",
-        policyNumber: "BH-0001",
-        effectiveDate: "01/01/2024",
-        expiryDate: "01/01/2025",
-        premium: "",
+        loadCapacity: "X",
       },
       lowConfidenceFields: [],
       rawText: "GIAY CHUNG NHAN BAO HIEM ...",
@@ -50,22 +46,21 @@ describe("parseExtractionResponse", () => {
 
     const result = parseExtractionResponse(raw);
     expect(result.documentType).toBe("insurance");
-    expect(result.insurance?.vehiclePlate).toBe("29A-123.45");
-    expect(result.driverLicense).toBeUndefined();
+    expect(result.vehicle?.vehiclePlate).toBe("29A-123.45");
   });
 
   it("fills missing optional string fields with empty string via defaults", () => {
     const raw = JSON.stringify({
-      documentType: "driver_license",
+      documentType: "vehicle_registration",
       confidence: 0.5,
-      driverLicense: { fullName: "A" },
+      vehicle: { ownerName: "A" },
       lowConfidenceFields: [],
       rawText: "",
     });
 
     const result = parseExtractionResponse(raw);
-    expect(result.driverLicense?.fullName).toBe("A");
-    expect(result.driverLicense?.licenseNumber).toBe("");
+    expect(result.vehicle?.ownerName).toBe("A");
+    expect(result.vehicle?.vehiclePlate).toBe("");
   });
 
   it("throws InvalidExtractionResponseError on malformed JSON", () => {
@@ -77,7 +72,7 @@ describe("parseExtractionResponse", () => {
     expect(() => parseExtractionResponse(raw)).toThrow(InvalidExtractionResponseError);
   });
 
-  it("handles unknown documentType gracefully", () => {
+  it("handles unknown documentType gracefully (no vehicle data)", () => {
     const raw = JSON.stringify({
       documentType: "unknown",
       confidence: 0.1,
@@ -86,7 +81,6 @@ describe("parseExtractionResponse", () => {
     });
     const result = parseExtractionResponse(raw);
     expect(result.documentType).toBe("unknown");
-    expect(result.driverLicense).toBeUndefined();
-    expect(result.insurance).toBeUndefined();
+    expect(result.vehicle).toBeUndefined();
   });
 });
