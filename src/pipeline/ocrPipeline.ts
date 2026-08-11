@@ -64,7 +64,6 @@ export class OcrPipeline {
       };
     }
 
-    await this.ensureTabs();
     const meta = {
       timestamp: new Date().toISOString(),
       employeeName: employee.name,
@@ -72,6 +71,7 @@ export class OcrPipeline {
     };
 
     try {
+      await this.ensureTabs();
       if (extraction.documentType === "driver_license") {
         const row = toLicenseRow(extraction, meta);
         if (row) await this.sheets.appendRow(this.config.tabLicense, row);
