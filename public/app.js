@@ -100,6 +100,7 @@ async function loadSettings() {
 
   document.getElementById("sheet-id").value = s.googleSheetId;
   document.getElementById("sheet-tab").value = s.sheetTab;
+  document.getElementById("vision-cross-check-enabled").checked = Boolean(s.visionCrossCheckEnabled);
 
   const saBadge = document.getElementById("sa-status");
   saBadge.textContent = s.googleServiceAccountSet ? "Da cau hinh" : "Chua cau hinh";
@@ -142,6 +143,19 @@ document.getElementById("form-sheets").addEventListener("submit", async (e) => {
     loadSettings();
   } catch (err) {
     showSaveMsg("form-sheets", err.message, true);
+  }
+});
+
+document.getElementById("form-vision").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    const body = {
+      visionCrossCheckEnabled: document.getElementById("vision-cross-check-enabled").checked,
+    };
+    await api("/api/settings", { method: "PUT", body: JSON.stringify(body) });
+    showSaveMsg("form-vision", "Da luu.");
+  } catch (err) {
+    showSaveMsg("form-vision", err.message, true);
   }
 });
 
@@ -248,10 +262,19 @@ function renderTestOcrResult(result) {
       </tr>
     `;
   }).join("");
+  const crossCheckHtml = (result.crossCheckNotes || []).length > 0 ? `
+    <div class="status-box warn" style="margin-top: 10px;">
+      <strong>Cloud Vision doi chieu phat hien khac biet:</strong>
+      <ul style="margin: 6px 0 0; padding-left: 18px;">
+        ${result.crossCheckNotes.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}
+      </ul>
+    </div>
+  ` : "";
   testOcrResult.innerHTML = `
     <p><strong>Loai giay to:</strong> ${escapeHtml(label)}
       &nbsp; <strong>Do tin cay:</strong> ${Math.round((result.confidence || 0) * 100)}%</p>
     <table class="data-table"><tbody>${rowsHtml}</tbody></table>
+    ${crossCheckHtml}
     ${result.rawText ? `
       <details style="margin-top: 10px;">
         <summary class="hint">Xem toan bo van ban Gemini doc duoc (rawText)</summary>

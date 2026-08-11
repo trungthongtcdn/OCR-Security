@@ -102,6 +102,8 @@ Trang Admin co 5 tab:
      cua Google service account** vao o van ban (khong can upload file, khong can dat file tren
      server). Trang se hien email cua service account de ban **Share** Google Sheet cho email do
      voi quyen Editor. Ung dung tu tao tab + dong tieu de neu chua co.
+   - **Doi chieu Cloud Vision (nang cao)**: tuy chon bat/tat, xem chi tiet o phan
+     [Doi chieu cheo voi Google Cloud Vision](#doi-chieu-cheo-voi-google-cloud-vision-tuy-chon-nang-cao) ben duoi.
    - **Han muc mac dinh**: han muc toan cong ty / thang va han muc mac dinh cho 1 NVKD moi.
 3. **Test OCR**: **tai anh len truc tiep tu trinh duyet** de xem thu Gemini doc duoc gi (loai giay
    to, do tin cay, du 8 truong, truong nao bi danh dau "can kiem tra"), **khong can gui qua Zalo**.
@@ -205,6 +207,37 @@ cho 2 truong nay (de kich hoat retry som hon), bat "thinking" (`thinkingConfig`)
 ky truoc khi tra loi thay vi doan nhanh, va giam `temperature` ve 0 de ket qua on dinh hon. Do day
 la truong rui ro cao, tin nhan tra loi Zalo **luon** nhac NVKD doi chieu so khung/so may voi ban
 goc truoc khi dung lam ho so chinh thuc, du Gemini co bao "chac chan" hay khong.
+
+### Doi chieu cheo voi Google Cloud Vision (tuy chon, nang cao)
+
+Van de kho nhat quan sat duoc thuc te: Gemini co the doc SAI so khung/so may ma **khong** tu danh
+dau "can kiem tra" (vi du them nham 1 ky tu vao giua ma) - vi day la ma chu+so vo nghia, khong co
+quy luat ngon ngu de model tu nghi ngo chinh no. Rieng cho van de nay, tab "Cau hinh he thong" co
+tuy chon **"Bat doi chieu Cloud Vision"**: khi bat, sau khi Gemini doc xong, he thong goi them
+Google Cloud Vision (`DOCUMENT_TEXT_DETECTION`) doc doc lap toan bo anh, tu tim dong chua nhan
+"SO KHUNG"/"SO MAY" trong ket qua Cloud Vision, roi so sanh voi gia tri Gemini doc duoc:
+- Neu 2 ben khop nhau (sau khi chuan hoa dau/hoa-thuong/dau cham-gach) -> khong lam gi them, do tin
+  cay cao hon.
+- Neu 2 ben LECH nhau -> tu dong danh dau truong do vao `lowConfidenceFields` (du Gemini "tu tin")
+  va **ghi ca 2 ket qua vao tin nhan tra loi Zalo** de NVKD tu doi chieu voi ban goc, vi khong the
+  biet chac ben nao dung khi khong co ban giay that truoc mat.
+
+Ly do chi ap dung cho 2 truong nay, khong dung Cloud Vision cho toan bo giay to: Cloud Vision doc
+chu in tot nhung **chu viet tay kem hon Gemini nhieu** (xem bang tren) - so khung/so may la ma
+DAP/IN (khong phai viet tay) nen day la truong hop hiem hoi ma mot OCR engine "printed-text" con
+co gia tri lam y kien thu 2. Tinh nang nay:
+- Dung lai chinh **Service Account JSON** da dien cho Google Sheets (cung 1 Google Cloud project) -
+  chi can vao Google Cloud Console bat them **Cloud Vision API**, khong can tao credential rieng.
+- Mac dinh **tat** vi phat sinh 1 API tra phi rieng (free tier 1000 don vi/thang, sau do tinh phi).
+- Bo qua an toan (khong lam gian doan OCR) neu Cloud Vision loi hoac chua bat API - chi la buoc
+  tang cuong, khong bat buoc de OCR hoat dong.
+
+**Da thu doi tu docTR (mindee/doctr) va quyet dinh KHONG dung:** docTR la thu vien OCR ma nguon mo
+nhung **khong ho tro chu viet tay** (xac nhan tu chinh maintainer, issue mo tu 2022 van chua co) -
+day chinh la diem yeu nhat trong khi chu viet tay la van de chinh can giai quyet. Ngoai ra docTR chi
+tra ve van ban tho theo vi tri tren anh (khong hieu "day la truong so khung"), va can chay bang
+Python/PyTorch (khac hoan toan stack Node.js hien tai, can dung them 1 service rieng) - chuyen sang
+se phuc tap hon nhieu ma chat luong nhieu kha nang con te hon Gemini cho truong hop nay.
 
 ## Gioi han cua MVP / huong mo rong
 

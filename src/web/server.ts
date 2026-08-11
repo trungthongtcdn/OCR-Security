@@ -132,6 +132,7 @@ export function createWebServer(deps: WebServerDeps): Express {
       googleServiceAccountSet: Boolean(settingsRepo.getGoogleServiceAccountJsonRaw()),
       googleServiceAccountEmail: settingsRepo.getGoogleServiceAccountCredentials()?.client_email ?? "",
       sheetTab: settingsRepo.getSheetTab(),
+      visionCrossCheckEnabled: settingsRepo.getVisionCrossCheckEnabled(),
       companyMonthlyQuota: companyRepo.getMonthlyQuota(),
       defaultEmployeeMonthlyQuota: settingsRepo.getDefaultEmployeeMonthlyQuota(),
     });
@@ -158,6 +159,9 @@ export function createWebServer(deps: WebServerDeps): Express {
       }
       if (typeof body.sheetTab === "string" && body.sheetTab.trim()) {
         settingsRepo.setSheetTab(body.sheetTab.trim());
+      }
+      if (typeof body.visionCrossCheckEnabled === "boolean") {
+        settingsRepo.setVisionCrossCheckEnabled(body.visionCrossCheckEnabled);
       }
       if (typeof body.companyMonthlyQuota === "number" && Number.isFinite(body.companyMonthlyQuota)) {
         companyRepo.setMonthlyQuota(Math.max(0, Math.trunc(body.companyMonthlyQuota)));

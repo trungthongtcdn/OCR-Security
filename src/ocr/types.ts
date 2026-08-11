@@ -35,4 +35,6 @@ export interface ExtractionResult {
   vehicle?: VehicleFields;
   lowConfidenceFields: string[];
   rawText: string;
+  /** Ghi chu do doi chieu cheo voi Cloud Vision phat hien khac biet (neu co bat tinh nang nay). */
+  crossCheckNotes?: string[];
 }

@@ -26,6 +26,7 @@ const KEYS = {
   googleServiceAccountJson: "google_service_account_json",
   sheetTab: "sheet_tab",
   defaultEmployeeMonthlyQuota: "default_employee_monthly_quota",
+  visionCrossCheckEnabled: "vision_cross_check_enabled",
 } as const;
 
 /** Cau hinh nghiep vu co the thay doi qua trang Admin (khong can restart hay sua .env). */
@@ -87,6 +88,14 @@ export class SettingsRepo {
   }
   setSheetTab(value: string): void {
     this.set(KEYS.sheetTab, value);
+  }
+
+  /** Bat/tat doi chieu so khung/so may voi Google Cloud Vision (y kien thu 2, doc lap voi Gemini). Mac dinh tat vi can bat them 1 API tra phi rieng. */
+  getVisionCrossCheckEnabled(): boolean {
+    return this.get(KEYS.visionCrossCheckEnabled) === "1";
+  }
+  setVisionCrossCheckEnabled(value: boolean): void {
+    this.set(KEYS.visionCrossCheckEnabled, value ? "1" : "0");
   }
 
   getDefaultEmployeeMonthlyQuota(): number {

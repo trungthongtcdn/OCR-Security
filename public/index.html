@@ -77,6 +77,22 @@
       <span class="save-msg" data-for="form-sheets"></span>
     </form>
 
+    <form id="form-vision" class="card">
+      <h3>Doi chieu Cloud Vision (nang cao)</h3>
+      <p class="hint">
+        Doc lai rieng 2 truong <strong>so khung / so may</strong> bang Google Cloud Vision (mot AI
+        khac, doc lap voi Gemini) de phat hien khi Gemini doc SAI ma tu tin (khong tu bao "can kiem
+        tra"). Neu 2 ben doc khac nhau, he thong se danh dau truong do va ghi ca 2 ket qua vao tin
+        nhan tra loi NVKD de doi chieu. Dung lai Service Account JSON da dien o tren - can vao
+        <a href="https://console.cloud.google.com/apis/library/vision.googleapis.com" target="_blank" rel="noopener">Google Cloud Console</a>
+        bat <strong>Cloud Vision API</strong> cho cung project. Cloud Vision co free tier 1000
+        don vi/thang, sau do tra phi rieng (ngoai chi phi Gemini).
+      </p>
+      <label class="checkbox"><input type="checkbox" id="vision-cross-check-enabled" /> Bat doi chieu Cloud Vision</label>
+      <button type="submit" class="btn btn-primary">Luu</button>
+      <span class="save-msg" data-for="form-vision"></span>
+    </form>
+
     <form id="form-quota" class="card">
       <h3>Han muc mac dinh</h3>
       <label>Han muc toan cong ty / thang

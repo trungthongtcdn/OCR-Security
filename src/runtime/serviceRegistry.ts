@@ -1,5 +1,6 @@
 import type { SettingsRepo } from "../db/settingsRepo.js";
 import { GeminiOcrClient, PREMIUM_GEMINI_MODEL } from "../ocr/geminiClient.js";
+import { VisionOcrClient } from "../ocr/visionClient.js";
 import { OcrPipeline } from "../pipeline/ocrPipeline.js";
 import type { QuotaService } from "../quota/quotaService.js";
 import { GoogleSheetsClient } from "../sheets/googleSheetsClient.js";
@@ -30,6 +31,7 @@ export class ServiceRegistry {
       this.settingsRepo.getGoogleSheetId(),
       this.settingsRepo.getGoogleServiceAccountJsonRaw(),
       this.settingsRepo.getSheetTab(),
+      this.settingsRepo.getVisionCrossCheckEnabled(),
     ]);
   }
 
@@ -54,7 +56,12 @@ export class ServiceRegistry {
       this.settingsRepo.getGoogleServiceAccountCredentials()!,
       this.settingsRepo.getGoogleSheetId()!,
     );
-    const pipeline = new OcrPipeline(gemini, premiumGemini, sheets, this.quotaService, {
+    // Dung lai chinh service account JSON da cau hinh cho Sheets - Admin chi can bat Cloud Vision
+    // API cho cung Google Cloud project do, khong can nhap them credential rieng.
+    const visionClient = this.settingsRepo.getVisionCrossCheckEnabled()
+      ? new VisionOcrClient(this.settingsRepo.getGoogleServiceAccountCredentials()!)
+      : undefined;
+    const pipeline = new OcrPipeline(gemini, premiumGemini, visionClient, sheets, this.quotaService, {
       tab: this.settingsRepo.getSheetTab(),
     });
 

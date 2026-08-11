@@ -2,6 +2,8 @@ import type { Employee } from "../db/employeeRepo.js";
 import { logger } from "../logger.js";
 import type { GeminiOcrClient, ImageInput } from "../ocr/geminiClient.js";
 import type { ExtractionResult, VehicleFields } from "../ocr/types.js";
+import type { VisionOcrClient } from "../ocr/visionClient.js";
+import { findLabeledValue, normalizeCode } from "../ocr/visionCrossCheck.js";
 import type { QuotaService } from "../quota/quotaService.js";
 import type { GoogleSheetsClient } from "../sheets/googleSheetsClient.js";
 import { DOC_TYPE_LABEL, VEHICLE_HEADER, toVehicleRow } from "../sheets/rowMapper.js";
@@ -9,6 +11,12 @@ import { DOC_TYPE_LABEL, VEHICLE_HEADER, toVehicleRow } from "../sheets/rowMappe
 export interface PipelineConfig {
   tab: string;
 }
+
+/** Nhan (tieng Viet, khong dau) dung de tim gia tri tren van ban tho cua Cloud Vision. */
+const CROSS_CHECK_FIELDS: Array<{ field: "chassisNumber" | "engineNumber"; label: string; labelKeywords: string[] }> = [
+  { field: "chassisNumber", label: "So khung", labelKeywords: ["SO KHUNG"] },
+  { field: "engineNumber", label: "So may", labelKeywords: ["SO MAY"] },
+];
 
 export interface PipelineResult {
   ok: boolean;
@@ -24,6 +32,8 @@ export class OcrPipeline {
     private readonly gemini: GeminiOcrClient,
     /** Model manh nhat, dung de doc lai khi lan dau co truong do tin cay thap (chu viet tay). */
     private readonly premiumGemini: GeminiOcrClient,
+    /** Y kien thu 2 (Google Cloud Vision) doi chieu so khung/so may - undefined neu Admin chua bat tinh nang nay. */
+    private readonly visionClient: VisionOcrClient | undefined,
     private readonly sheets: GoogleSheetsClient,
     private readonly quotaService: QuotaService,
     private readonly config: PipelineConfig,
@@ -95,7 +105,8 @@ export class OcrPipeline {
   async readImage(image: ImageInput, context: number | string = "test"): Promise<ExtractionResult> {
     const extraction = await this.gemini.extract(image);
     if (extraction.documentType === "unknown") return extraction;
-    return this.retryWithPremiumIfLowConfidence(extraction, image, context);
+    const afterRetry = await this.retryWithPremiumIfLowConfidence(extraction, image, context);
+    return this.crossCheckWithVision(afterRetry, image, context);
   }
 
   /**
@@ -125,6 +136,51 @@ export class OcrPipeline {
       logger.warn({ err, context }, "loi khi doc lai bang model manh hon, dung ket qua ban dau");
       return extraction;
     }
+  }
+
+  /**
+   * Doi chieu cheo so khung/so may voi Google Cloud Vision - day la ma IN/DAP (khong phai chu
+   * viet tay) nen 1 engine OCR khac co the giup phat hien khi Gemini doc SAI ma "tu tin" (khong
+   * tu danh dau lowConfidenceFields). Neu Cloud Vision doc khac Gemini, danh dau truong do can
+   * kiem tra thu cong va ghi lai ca 2 ket qua de NVKD doi chieu. Bo qua hoan toan (khong loi) neu
+   * chua bat tinh nang nay hoac Cloud Vision goi loi - day la buoc tang cuong, khong bat buoc.
+   */
+  private async crossCheckWithVision(
+    extraction: ExtractionResult,
+    image: ImageInput,
+    context: number | string,
+  ): Promise<ExtractionResult> {
+    if (!this.visionClient || !extraction.vehicle) return extraction;
+
+    let visionText: string;
+    try {
+      visionText = await this.visionClient.detectText(image);
+    } catch (err) {
+      logger.warn({ err, context }, "loi khi goi Cloud Vision doi chieu, bo qua buoc nay");
+      return extraction;
+    }
+    if (!visionText) return extraction;
+
+    const vehicle = extraction.vehicle;
+    let lowConfidenceFields = extraction.lowConfidenceFields;
+    const notes: string[] = [];
+
+    for (const { field, label, labelKeywords } of CROSS_CHECK_FIELDS) {
+      const geminiValue = vehicle[field];
+      if (!geminiValue) continue;
+      const visionValue = findLabeledValue(visionText, labelKeywords);
+      if (!visionValue) continue;
+      if (normalizeCode(geminiValue) === normalizeCode(visionValue)) continue;
+
+      if (!lowConfidenceFields.includes(field)) {
+        lowConfidenceFields = [...lowConfidenceFields, field];
+      }
+      notes.push(`${label}: Gemini doc "${geminiValue}", Cloud Vision doc "${visionValue}"`);
+    }
+
+    if (notes.length === 0) return extraction;
+    logger.info({ context, notes }, "Cloud Vision doi chieu phat hien khac biet voi Gemini");
+    return { ...extraction, lowConfidenceFields, crossCheckNotes: notes };
   }
 
   private blockedMessage(
@@ -168,6 +224,12 @@ export class OcrPipeline {
     ];
     if (extraction.lowConfidenceFields.length > 0) {
       lines.push(`(Luu y: kiem tra lai thu cong cac truong: ${extraction.lowConfidenceFields.join(", ")})`);
+    }
+    if (extraction.crossCheckNotes && extraction.crossCheckNotes.length > 0) {
+      lines.push("(Doi chieu Cloud Vision phat hien khac biet, kiem tra lai ban goc:)");
+      for (const note of extraction.crossCheckNotes) {
+        lines.push(`  - ${note}`);
+      }
     }
     lines.push("(*) So khung/So may la ma so quan trong, luon doi chieu lai voi ban goc truoc khi dung lam ho so chinh thuc.");
     lines.push("Da luu vao Google Sheet.");
