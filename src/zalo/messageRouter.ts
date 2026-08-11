@@ -48,10 +48,7 @@ export class MessageRouter {
     let reply: string;
     try {
       const pipeline = this.serviceRegistry.getPipeline();
-      const response = await fetch(imageUrl);
-      if (!response.ok) throw new Error(`tai anh that bai: HTTP ${response.status}`);
-      const mimeType = response.headers.get("content-type") ?? "image/jpeg";
-      const buffer = Buffer.from(await response.arrayBuffer());
+      const { buffer, mimeType } = await this.zaloSession.downloadImage(imageUrl);
       const result = await pipeline.processImage(employee, {
         base64Data: buffer.toString("base64"),
         mimeType,

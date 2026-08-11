@@ -222,4 +222,26 @@ export class ZaloSessionManager extends EventEmitter {
     if (!user?.uid) return undefined;
     return { uid: user.uid, displayName: user.display_name || user.zalo_name || user.uid };
   }
+
+  /**
+   * Tai anh dinh kem tu URL CDN cua Zalo. CDN nay yeu cau cookie phien dang nhap +
+   * User-Agent hop le, fetch() thuong (khong cookie) se bi tu choi (403/HTML loi thay vi
+   * anh) khien OCR bao "khong tai duoc anh" du NVKD gui anh binh thuong.
+   */
+  async downloadImage(url: string): Promise<{ buffer: Buffer; mimeType: string }> {
+    const api = this.getApi();
+    const context = api.getContext();
+    const cookie = api.getCookie().getCookieStringSync(url);
+    const response = await fetch(url, {
+      headers: {
+        Cookie: cookie,
+        "User-Agent": context.userAgent,
+        Referer: "https://chat.zalo.me/",
+      },
+    });
+    if (!response.ok) throw new Error(`tai anh that bai: HTTP ${response.status}`);
+    const mimeType = response.headers.get("content-type") ?? "image/jpeg";
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return { buffer, mimeType };
+  }
 }
