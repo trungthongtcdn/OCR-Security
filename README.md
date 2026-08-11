@@ -89,7 +89,7 @@ Mo trinh duyet toi `http://localhost:4000` (hoac IP:PORT cua server). Mac dinh *
 
 ## Trang Admin
 
-Trang Admin co 4 tab:
+Trang Admin co 5 tab:
 
 1. **Ket noi Zalo** - bam "Dang nhap Zalo", quet QR bang app Zalo tren dien thoai cua Admin.
    Trang tu poll trang thai (dang cho quet / da ket noi) moi 2.5 giay. Sau khi dang nhap, session
@@ -103,12 +103,16 @@ Trang Admin co 4 tab:
      server). Trang se hien email cua service account de ban **Share** Google Sheet cho email do
      voi quyen Editor. Ung dung tu tao tab + dong tieu de neu chua co.
    - **Han muc mac dinh**: han muc toan cong ty / thang va han muc mac dinh cho 1 NVKD moi.
-3. **NVKD & han muc**: bang danh sach NVKD (tu dong xuat hien sau khi ho nhan tin lan dau). Admin
+3. **Test OCR**: **tai anh len truc tiep tu trinh duyet** de xem thu Gemini doc duoc gi (loai giay
+   to, do tin cay, du 8 truong, truong nao bi danh dau "can kiem tra"), **khong can gui qua Zalo**.
+   Tinh nang nay KHONG tru han muc NVKD va KHONG ghi vao Google Sheet - chi de kiem tra chat luong
+   doc/thu prompt truoc khi dung that. Can cau hinh xong Gemini API key o tab 2 truoc.
+4. **NVKD & han muc**: bang danh sach NVKD (tu dong xuat hien sau khi ho nhan tin lan dau). Admin
    khong can biet/nhap Zalo ID thu cong - co the **them NVKD bang so dien thoai**, he thong tu tra
    ra Zalo ID va ten (yeu cau da ket noi Zalo o tab 1); cach nhap Zalo ID truc tiep van con nhung
    dat trong muc "nang cao" cho truong hop can thiet. Bang co o **tim kiem theo ten/ID**. Sua han
    muc, bat/tat hoat dong, danh dau la Admin (cho phep dung lenh quan tri qua Zalo) - luu ngay tren bang.
-4. **Nhat ky OCR**: xem cac lan OCR gan day (thanh cong/that bai) de kiem tra he thong hoat dong dung.
+5. **Nhat ky OCR**: xem cac lan OCR gan day (thanh cong/that bai) de kiem tra he thong hoat dong dung.
 
 Cau hinh luu vao SQLite; moi lan Admin luu cau hinh Gemini/Sheets, he thong tu dong dung cau hinh
 moi cho lan OCR tiep theo - **khong can restart app**.

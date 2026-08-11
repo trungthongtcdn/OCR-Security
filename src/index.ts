@@ -51,6 +51,7 @@ async function main(): Promise<void> {
     companyRepo,
     settingsRepo,
     zaloSession,
+    serviceRegistry,
     adminUser: config.web.adminUser,
     adminPassword: config.web.adminPassword,
   });

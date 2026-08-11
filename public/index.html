@@ -15,6 +15,7 @@
 <nav class="tabs">
   <button class="tab-btn active" data-tab="zalo">Ket noi Zalo</button>
   <button class="tab-btn" data-tab="settings">Cau hinh he thong</button>
+  <button class="tab-btn" data-tab="test-ocr">Test OCR</button>
   <button class="tab-btn" data-tab="employees">NVKD &amp; han muc</button>
   <button class="tab-btn" data-tab="logs">Nhat ky OCR</button>
 </nav>
@@ -87,6 +88,26 @@
       <button type="submit" class="btn btn-primary">Luu han muc</button>
       <span class="save-msg" data-for="form-quota"></span>
     </form>
+  </section>
+
+  <!-- TAB: TEST OCR -->
+  <section id="tab-test-ocr" class="tab-panel">
+    <h2>Test OCR</h2>
+    <p class="hint">
+      Tai anh Giay dang ky xe hoac Giay chung nhan bao hiem xe len de xem thu ket qua Gemini doc
+      duoc. Tinh nang nay chi de kiem tra chat luong doc - <strong>khong tru han muc NVKD va khong
+      ghi vao Google Sheet</strong>. Can cau hinh xong Gemini API key o tab "Cau hinh he thong" truoc.
+    </p>
+    <div class="card">
+      <input type="file" id="test-ocr-file" accept="image/*" />
+      <div id="test-ocr-preview-wrap" class="qr-wrap hidden" style="margin-top: 14px;">
+        <img id="test-ocr-preview" alt="Anh xem truoc" style="max-width: 320px; height: auto; border-radius: 8px;" />
+      </div>
+      <div class="actions" style="margin-top: 14px;">
+        <button id="btn-test-ocr" class="btn btn-primary" type="button" disabled>Doc thu anh nay</button>
+      </div>
+      <div id="test-ocr-result" class="lookup-result hidden" style="margin-top: 14px;"></div>
+    </div>
   </section>
 
   <!-- TAB: EMPLOYEES -->

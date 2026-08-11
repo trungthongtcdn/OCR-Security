@@ -159,6 +159,108 @@ document.getElementById("form-quota").addEventListener("submit", async (e) => {
   }
 });
 
+// ---------- Test OCR ----------
+const testOcrFileInput = document.getElementById("test-ocr-file");
+const testOcrPreviewWrap = document.getElementById("test-ocr-preview-wrap");
+const testOcrPreview = document.getElementById("test-ocr-preview");
+const btnTestOcr = document.getElementById("btn-test-ocr");
+const testOcrResult = document.getElementById("test-ocr-result");
+
+let testOcrImageBase64 = "";
+let testOcrMimeType = "";
+
+const TEST_OCR_DOC_TYPE_LABELS = {
+  vehicle_registration: "Dang ky xe",
+  insurance: "Bao hiem xe",
+  unknown: "Khong xac dinh",
+};
+
+const TEST_OCR_FIELDS = [
+  ["vehiclePlate", "Bien so xe"],
+  ["vehicleType", "Loai xe"],
+  ["seatCount", "So cho ngoi"],
+  ["ownerName", "Ho ten chu xe"],
+  ["address", "Dia chi"],
+  ["chassisNumber", "So khung"],
+  ["engineNumber", "So may"],
+  ["loadCapacity", "Tai trong"],
+];
+
+testOcrFileInput.addEventListener("change", () => {
+  const file = testOcrFileInput.files[0];
+  testOcrResult.classList.add("hidden");
+  testOcrImageBase64 = "";
+  if (!file) {
+    testOcrPreviewWrap.classList.add("hidden");
+    btnTestOcr.disabled = true;
+    return;
+  }
+  testOcrMimeType = file.type || "image/jpeg";
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = String(reader.result);
+    testOcrImageBase64 = dataUrl.split(",")[1] || "";
+    testOcrPreview.src = dataUrl;
+    testOcrPreviewWrap.classList.remove("hidden");
+    btnTestOcr.disabled = false;
+  };
+  reader.readAsDataURL(file);
+});
+
+btnTestOcr.addEventListener("click", async () => {
+  if (!testOcrImageBase64) return;
+  btnTestOcr.disabled = true;
+  btnTestOcr.textContent = "Dang doc...";
+  testOcrResult.classList.remove("hidden");
+  testOcrResult.innerHTML = "Dang goi Gemini, co the mat vai giay...";
+  try {
+    const { result } = await api("/api/ocr/test", {
+      method: "POST",
+      body: JSON.stringify({ imageBase64: testOcrImageBase64, mimeType: testOcrMimeType }),
+    });
+    renderTestOcrResult(result);
+  } catch (err) {
+    testOcrResult.innerHTML = `<span class="save-msg error">${escapeHtml(err.message)}</span>`;
+  } finally {
+    btnTestOcr.disabled = false;
+    btnTestOcr.textContent = "Doc thu anh nay";
+  }
+});
+
+function renderTestOcrResult(result) {
+  const label = TEST_OCR_DOC_TYPE_LABELS[result.documentType] || result.documentType;
+  if (result.documentType === "unknown") {
+    testOcrResult.innerHTML = `
+      <p><strong>${escapeHtml(label)}</strong></p>
+      <p class="hint">Anh nay KHONG duoc nhan dien la Giay dang ky xe hoac Giay chung nhan bao hiem
+      xe - trong luong xu ly that qua Zalo, he thong se bo qua anh nay va KHONG tra loi NVKD.</p>
+    `;
+    return;
+  }
+  const f = result.vehicle || {};
+  const low = new Set(result.lowConfidenceFields || []);
+  const rowsHtml = TEST_OCR_FIELDS.map(([key, vnLabel]) => {
+    const flagged = low.has(key);
+    return `
+      <tr${flagged ? ' style="background:#fffbeb;"' : ""}>
+        <td>${escapeHtml(vnLabel)}${flagged ? ' <span class="badge missing">can kiem tra</span>' : ""}</td>
+        <td>${escapeHtml(f[key] || "")}</td>
+      </tr>
+    `;
+  }).join("");
+  testOcrResult.innerHTML = `
+    <p><strong>Loai giay to:</strong> ${escapeHtml(label)}
+      &nbsp; <strong>Do tin cay:</strong> ${Math.round((result.confidence || 0) * 100)}%</p>
+    <table class="data-table"><tbody>${rowsHtml}</tbody></table>
+    ${result.rawText ? `
+      <details style="margin-top: 10px;">
+        <summary class="hint">Xem toan bo van ban Gemini doc duoc (rawText)</summary>
+        <p class="hint" style="white-space: pre-wrap;">${escapeHtml(result.rawText)}</p>
+      </details>
+    ` : ""}
+  `;
+}
+
 // ---------- Employees ----------
 let allEmployees = [];
 

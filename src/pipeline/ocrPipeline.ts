@@ -43,7 +43,7 @@ export class OcrPipeline {
 
     let extraction: ExtractionResult;
     try {
-      extraction = await this.gemini.extract(image);
+      extraction = await this.readImage(image, employee.id);
     } catch (err) {
       logger.error({ err, employeeId: employee.id }, "loi khi goi Gemini OCR");
       this.quotaService.recordFailure(employee, "unknown", String(err));
@@ -60,8 +60,6 @@ export class OcrPipeline {
       );
       return { ok: false, silent: true, message: "" };
     }
-
-    extraction = await this.retryWithPremiumIfLowConfidence(extraction, image, employee.id);
 
     await this.ensureTab();
     const meta = {
@@ -90,6 +88,17 @@ export class OcrPipeline {
   }
 
   /**
+   * Doc anh bang Gemini (+ tu dong doc lai bang model manh hon neu co truong do tin cay thap).
+   * Dung chung cho ca luong xu ly that qua Zalo (processImage, co tru han muc/ghi sheet) va
+   * tinh nang "Test OCR" trong trang Admin (chi doc thu, khong tru han muc/khong ghi sheet).
+   */
+  async readImage(image: ImageInput, context: number | string = "test"): Promise<ExtractionResult> {
+    const extraction = await this.gemini.extract(image);
+    if (extraction.documentType === "unknown") return extraction;
+    return this.retryWithPremiumIfLowConfidence(extraction, image, context);
+  }
+
+  /**
    * Neu lan doc dau tien co truong do tin cay thap (thuong do chu viet tay), tu dong doc lai
    * bang model manh nhat hien co va giu ket qua nao it truong nghi ngo hon. Bo qua neu model
    * dang dung da la model manh nhat (tranh goi API 2 lan khong can thiet).
@@ -97,7 +106,7 @@ export class OcrPipeline {
   private async retryWithPremiumIfLowConfidence(
     extraction: ExtractionResult,
     image: ImageInput,
-    employeeId: number,
+    context: number | string,
   ): Promise<ExtractionResult> {
     if (extraction.lowConfidenceFields.length === 0) return extraction;
     if (this.gemini === this.premiumGemini) return extraction;
@@ -106,14 +115,14 @@ export class OcrPipeline {
       const retry = await this.premiumGemini.extract(image);
       if (retry.documentType !== "unknown" && retry.lowConfidenceFields.length < extraction.lowConfidenceFields.length) {
         logger.info(
-          { employeeId, before: extraction.lowConfidenceFields.length, after: retry.lowConfidenceFields.length },
+          { context, before: extraction.lowConfidenceFields.length, after: retry.lowConfidenceFields.length },
           "doc lai bang model manh hon do chu viet tay, ket qua tot hon",
         );
         return retry;
       }
       return extraction;
     } catch (err) {
-      logger.warn({ err, employeeId }, "loi khi doc lai bang model manh hon, dung ket qua ban dau");
+      logger.warn({ err, context }, "loi khi doc lai bang model manh hon, dung ket qua ban dau");
       return extraction;
     }
   }

@@ -7,6 +7,7 @@ import { type EmployeeRepo, type EmployeeUpdate } from "../db/employeeRepo.js";
 import type { SettingsRepo } from "../db/settingsRepo.js";
 import { currentMonthKey, type UsageRepo } from "../db/usageRepo.js";
 import { logger } from "../logger.js";
+import type { ServiceRegistry } from "../runtime/serviceRegistry.js";
 import type { ZaloSessionManager } from "../zalo/zaloSession.js";
 
 export interface WebServerDeps {
@@ -15,6 +16,7 @@ export interface WebServerDeps {
   companyRepo: CompanyRepo;
   settingsRepo: SettingsRepo;
   zaloSession: ZaloSessionManager;
+  serviceRegistry: ServiceRegistry;
   adminUser: string;
   adminPassword: string;
 }
@@ -51,11 +53,12 @@ function errorMessage(err: unknown): string {
 }
 
 export function createWebServer(deps: WebServerDeps): Express {
-  const { employeeRepo, usageRepo, companyRepo, settingsRepo, zaloSession } = deps;
+  const { employeeRepo, usageRepo, companyRepo, settingsRepo, zaloSession, serviceRegistry } = deps;
   const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../public");
 
   const app = express();
-  app.use(express.json({ limit: "2mb" }));
+  // 20mb: du cho anh chup dien thoai gui base64 qua tinh nang "Test OCR" trong trang Admin.
+  app.use(express.json({ limit: "20mb" }));
   if (deps.adminPassword) {
     app.use(basicAuthMiddleware(deps.adminUser, deps.adminPassword));
   } else {
@@ -96,6 +99,27 @@ export function createWebServer(deps: WebServerDeps): Express {
       }
       res.json({ ok: true, user });
     } catch (err) {
+      res.status(400).json({ ok: false, error: errorMessage(err) });
+    }
+  });
+
+  /** Test nhanh OCR tu trang Admin: doc anh bang Gemini (co retry model manh hon neu can) va
+   * tra ve ket qua thuc, KHONG tru han muc NVKD va KHONG ghi vao Google Sheet - chi de kiem tra
+   * chat luong doc truoc khi dung that. */
+  app.post("/api/ocr/test", async (req, res) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const base64Data = typeof body.imageBase64 === "string" ? body.imageBase64 : "";
+    const mimeType = typeof body.mimeType === "string" && body.mimeType ? body.mimeType : "image/jpeg";
+    if (!base64Data) {
+      res.status(400).json({ ok: false, error: "Thieu du lieu anh" });
+      return;
+    }
+    try {
+      const pipeline = serviceRegistry.getPipeline();
+      const result = await pipeline.readImage({ base64Data, mimeType }, "admin-test");
+      res.json({ ok: true, result });
+    } catch (err) {
+      logger.error({ err }, "loi khi test OCR tu trang Admin");
       res.status(400).json({ ok: false, error: errorMessage(err) });
     }
   });
