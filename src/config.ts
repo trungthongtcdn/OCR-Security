@@ -15,65 +15,31 @@ function int(name: string, value: string | undefined, fallback: number): number 
   return n;
 }
 
+/**
+ * Chi chua cau hinh ha tang (khong doi luc chay). Cau hinh nghiep vu (Gemini, Google
+ * Sheets, han muc, danh sach Admin) duoc quan ly qua trang web Admin va luu trong DB
+ * (xem src/db/settingsRepo.ts), khong con nam trong .env.
+ */
 export interface AppConfig {
-  gemini: {
-    apiKey: string;
-    model: string;
-  };
-  sheets: {
-    serviceAccountFile: string;
-    sheetId: string;
-    tabLicense: string;
-    tabInsurance: string;
-  };
-  zalo: {
-    sessionDir: string;
-  };
-  db: {
-    file: string;
-  };
-  quota: {
-    companyMonthlyQuota: number;
-    defaultEmployeeMonthlyQuota: number;
-  };
-  adminZaloIds: Set<string>;
+  db: { file: string };
+  zalo: { sessionDir: string };
+  web: { port: number; adminUser: string; adminPassword: string };
   logLevel: string;
 }
 
 export function loadConfig(): AppConfig {
   return {
-    gemini: {
-      apiKey: required("GEMINI_API_KEY", process.env.GEMINI_API_KEY),
-      model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
-    },
-    sheets: {
-      serviceAccountFile: path.resolve(
-        process.env.GOOGLE_SERVICE_ACCOUNT_FILE ?? "./credentials/service-account.json",
-      ),
-      sheetId: required("GOOGLE_SHEET_ID", process.env.GOOGLE_SHEET_ID),
-      tabLicense: process.env.GOOGLE_SHEET_TAB_LICENSE ?? "GPLX",
-      tabInsurance: process.env.GOOGLE_SHEET_TAB_INSURANCE ?? "BaoHiem",
+    db: {
+      file: path.resolve(process.env.DATABASE_FILE ?? "./data/ocr-security.sqlite3"),
     },
     zalo: {
       sessionDir: path.resolve(process.env.ZALO_SESSION_DIR ?? "./zalo-session"),
     },
-    db: {
-      file: path.resolve(process.env.DATABASE_FILE ?? "./data/ocr-security.sqlite3"),
+    web: {
+      port: int("PORT", process.env.PORT, 4000),
+      adminUser: process.env.ADMIN_PANEL_USER ?? "admin",
+      adminPassword: required("ADMIN_PANEL_PASSWORD", process.env.ADMIN_PANEL_PASSWORD),
     },
-    quota: {
-      companyMonthlyQuota: int("COMPANY_MONTHLY_QUOTA", process.env.COMPANY_MONTHLY_QUOTA, 1000),
-      defaultEmployeeMonthlyQuota: int(
-        "DEFAULT_EMPLOYEE_MONTHLY_QUOTA",
-        process.env.DEFAULT_EMPLOYEE_MONTHLY_QUOTA,
-        50,
-      ),
-    },
-    adminZaloIds: new Set(
-      (process.env.ADMIN_ZALO_IDS ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    ),
     logLevel: process.env.LOG_LEVEL ?? "info",
   };
 }

@@ -21,29 +21,37 @@ KH --(gui anh)--> NVKD --(forward anh)--> Zalo ca nhan cua Admin (da dang nhap v
                                     Tra loi lai NVKD ngay trong hoi thoai Zalo
 ```
 
+Toan bo cau hinh (Gemini API key, Google Sheets, dang nhap Zalo, han muc, danh sach NVKD/Admin)
+duoc thiet lap qua **trang Admin** chay kem theo ung dung - khong can sua file `.env` hay code.
+
 NVKD nhan tin "han muc" hoac `/quota` toi Zalo cua Admin de tu tra soat han muc con lai.
-Admin dung cac lenh `/quota all`, `/setquota`, `/setcompanyquota`, `/active` de quan ly.
+Admin quan ly moi thu qua trang web (xem [Trang Admin](#trang-admin)), hoac dung cac lenh
+`/quota all`, `/setquota`, `/setcompanyquota`, `/active` ngay tren Zalo.
 
 ## Kien truc
 
 ```
 src/
-  config.ts            Doc bien moi truong
-  db/                   SQLite (better-sqlite3): employees, usage_logs, company_config
-  quota/quotaService.ts Logic han muc (kiem tra + tru han muc ca nhan & cong ty)
-  ocr/                   Goi Gemini API, prompt boc tach, validate JSON tra ve (zod)
-  sheets/                Ghi du lieu vao Google Sheets (googleapis)
-  zalo/                  Ket noi Zalo ca nhan (zca-js), parse lenh, doc anh tu tin nhan
-  pipeline/ocrPipeline.ts  Dieu phoi: kiem tra han muc -> OCR -> ghi sheet -> tru han muc -> tra loi
-  index.ts               Bootstrap ung dung
+  config.ts                Doc bien moi truong ha tang (PORT, mat khau Admin, duong dan file...)
+  db/                       SQLite (better-sqlite3): employees, usage_logs, company_config, settings
+  db/settingsRepo.ts        Cau hinh nghiep vu (Gemini, Sheets, han muc) - doc/ghi qua trang Admin
+  quota/quotaService.ts     Logic han muc (kiem tra + tru han muc ca nhan & cong ty)
+  ocr/                       Goi Gemini API, prompt boc tach, validate JSON tra ve (zod)
+  sheets/                    Ghi du lieu vao Google Sheets (googleapis)
+  zalo/zaloSession.ts        Quan ly dang nhap Zalo (QR, session, trang thai) qua zca-js
+  zalo/messageRouter.ts      Dieu huong tin nhan: anh -> OCR, text -> lenh han muc
+  runtime/serviceRegistry.ts Tu dong build lai Gemini/Sheets client khi Admin doi cau hinh
+  web/server.ts              Express: API cho trang Admin (co Basic Auth)
+  index.ts                   Bootstrap: mo DB, phuc hoi session Zalo, chay web server
+public/                     Frontend trang Admin (HTML/CSS/JS thuan, khong can build)
 ```
 
 ## Yeu cau
 
 - Node.js >= 20 (khuyen nghi 22)
 - Tai khoan Zalo ca nhan de lam "nick Admin" (khong phai Zalo OA)
-- Gemini API key (Google AI Studio: https://aistudio.google.com/apikey)
-- Google Cloud service account co quyen truy cap Google Sheets API
+- Gemini API key (Google AI Studio: https://aistudio.google.com/apikey) - dien qua trang Admin
+- Google Cloud service account co quyen truy cap Google Sheets API - dien qua trang Admin
 
 ## Cai dat
 
@@ -52,42 +60,56 @@ npm install
 cp .env.example .env
 ```
 
-Dien vao `.env`:
+`.env` chi con cau hinh **ha tang**, khong lien quan nghiep vu:
 
 | Bien | Y nghia |
 |---|---|
-| `GEMINI_API_KEY` | API key tu Google AI Studio |
-| `GEMINI_MODEL` | Mac dinh `gemini-2.5-flash` (doi sang `gemini-2.5-pro` neu can do chinh xac cao hon voi chu viet tay kho doc) |
-| `GOOGLE_SERVICE_ACCOUNT_FILE` | Duong dan file JSON cua Google Cloud service account |
-| `GOOGLE_SHEET_ID` | ID cua Google Sheet dich (trong URL) |
+| `PORT` | Cong chay trang Admin (mac dinh 4000) |
+| `ADMIN_PANEL_USER` / `ADMIN_PANEL_PASSWORD` | Tai khoan dang nhap trang Admin (HTTP Basic Auth) - **bat buoc doi mat khau mac dinh** |
+| `DATABASE_FILE` | Duong dan file SQLite (luu ca cau hinh, han muc, NVKD, nhat ky OCR) |
 | `ZALO_SESSION_DIR` | Thu muc luu session dang nhap Zalo, tranh phai quet QR moi lan chay |
-| `DATABASE_FILE` | Duong dan file SQLite |
-| `COMPANY_MONTHLY_QUOTA` | Han muc OCR toan cong ty / thang |
-| `DEFAULT_EMPLOYEE_MONTHLY_QUOTA` | Han muc mac dinh cap cho 1 NVKD moi khi lien he lan dau |
-| `ADMIN_ZALO_IDS` | Danh sach zalo_id cua (cac) Admin, cach nhau boi dau phay - co quyen dung lenh quan tri |
-
-### Thiet lap Google Sheets
-
-1. Tao project tren Google Cloud Console, bat **Google Sheets API**.
-2. Tao **Service Account**, tai file JSON key, dat vao duong dan trong `GOOGLE_SERVICE_ACCOUNT_FILE`.
-3. Tao 1 Google Sheet moi, **Share** sheet do cho email cua service account (dang trong file JSON, dang `xxx@xxx.iam.gserviceaccount.com`) voi quyen **Editor**.
-4. Lay `GOOGLE_SHEET_ID` tu URL: `https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit`.
-5. Ung dung se tu tao 2 tab (`GPLX`, `BaoHiem`) va dong tieu de neu chua co.
-
-### Dang nhap Zalo (tai khoan Admin)
-
-Lan chay dau tien, ung dung se hien **QR code** (luu tai `zalo-session/qr.png` va in ra terminal) -
-dung app Zalo tren dien thoai cua Admin de quet. Sau khi dang nhap thanh cong, session duoc luu lai
-trong `ZALO_SESSION_DIR`, cac lan chay sau khong can quet QR nua (den khi session het han).
-
-Sau khi dang nhap, lay `zalo_id` cua Admin (co the log ra tu `api.getOwnId()`) va dien vao
-`ADMIN_ZALO_IDS` trong `.env`.
-
-## Chay ung dung
 
 ```bash
-npm run dev     # chay bang tsx, tu reload khi sua code
-npm run build && npm start   # build production roi chay
+npm run build && npm start   # hoac: npm run dev de chay bang tsx (tu reload)
+```
+
+Mo trinh duyet toi `http://localhost:4000` (hoac IP:PORT cua server), dang nhap bang
+`ADMIN_PANEL_USER` / `ADMIN_PANEL_PASSWORD`.
+
+## Trang Admin
+
+Trang Admin co 4 tab:
+
+1. **Ket noi Zalo** - bam "Dang nhap Zalo", quet QR bang app Zalo tren dien thoai cua Admin.
+   Trang tu poll trang thai (dang cho quet / da ket noi) moi 2.5 giay. Sau khi dang nhap, session
+   duoc luu vao `ZALO_SESSION_DIR`, lan sau khoi dong app se tu ket noi lai (khong can quet QR),
+   tru khi Admin bam "Dang xuat".
+2. **Cau hinh he thong**:
+   - **Gemini**: dan API key (lay tai https://aistudio.google.com/apikey) va chon model.
+   - **Google Sheets**: dien Google Sheet ID (trong URL sheet), ten 2 tab (GPLX/BaoHiem), va
+     **dan noi dung file JSON cua Google service account** vao o van ban (khong can upload file,
+     khong can dat file tren server). Trang se hien email cua service account de ban **Share**
+     Google Sheet cho email do voi quyen Editor. Ung dung tu tao tab + dong tieu de neu chua co.
+   - **Han muc mac dinh**: han muc toan cong ty / thang va han muc mac dinh cho 1 NVKD moi.
+3. **NVKD & han muc**: bang danh sach NVKD (tu dong xuat hien sau khi ho nhan tin lan dau, hoac
+   Admin them thu cong qua form "Them NVKD" bang zalo_id + ten). Sua han muc, bat/tat hoat dong,
+   danh dau la Admin (cho phep dung lenh quan tri qua Zalo) - luu ngay tren bang.
+4. **Nhat ky OCR**: xem cac lan OCR gan day (thanh cong/that bai) de kiem tra he thong hoat dong dung.
+
+Cau hinh luu vao SQLite; moi lan Admin luu cau hinh Gemini/Sheets, he thong tu dong dung cau hinh
+moi cho lan OCR tiep theo - **khong can restart app**.
+
+### Thiet lap Google Sheets (chi tiet)
+
+1. Tao project tren Google Cloud Console, bat **Google Sheets API**.
+2. Tao **Service Account**, tai file JSON key.
+3. Mo file JSON, copy toan bo noi dung, dan vao o "Service Account JSON" trong trang Admin.
+4. Tao 1 Google Sheet moi, **Share** sheet do cho email service account (trang Admin se hien email
+   nay sau khi luu, dang `xxx@xxx.iam.gserviceaccount.com`) voi quyen **Editor**.
+5. Lay `GOOGLE_SHEET_ID` tu URL: `https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit`,
+   dien vao trang Admin.
+
+```bash
 npm test        # chay unit test
 npm run typecheck
 ```
@@ -98,13 +120,16 @@ npm run typecheck
 - `han muc` hoac `/quota`: xem han muc OCR con lai cua chinh minh
 - Gui anh GPLX / giay bao hiem xe de OCR tu dong
 
-**Admin (zalo_id nam trong `ADMIN_ZALO_IDS`):**
+**Admin (NVKD duoc danh dau "La Admin" trong trang quan tri):**
 - `/quota all`: xem han muc tat ca NVKD
 - `/quota <ten NVKD>` hoac `han muc <ten NVKD>`: xem han muc 1 NVKD
 - `han muc cong ty`: xem han muc toan cong ty
 - `/setquota <ten NVKD> <so luot>`: cap han muc thang cho 1 NVKD
 - `/setcompanyquota <so luot>`: cap han muc thang cho toan cong ty
 - `/active <ten NVKD> on|off`: bat/tat quyen OCR cua 1 NVKD
+
+Tat ca cac lenh tren cung lam duoc qua trang Admin (tab "NVKD & han muc"), day chi la kenh thay the
+nhanh khi dang chat san tren Zalo.
 
 Han muc duoc tinh theo thang (reset tu nhien vi chi dem so lan OCR **thanh cong** trong thang hien tai,
 khong can job dat lai). Han muc bi chan neu **het han muc ca nhan HOAC het han muc cong ty**
@@ -121,8 +146,12 @@ khong can job dat lai). Han muc bi chan neu **het han muc ca nhan HOAC het han m
   thuoc pham vi **du lieu ca nhan** theo Nghi dinh 13/2023/ND-CP. Can gioi han quyen truy cap Google
   Sheet (chi Admin/nguoi co trach nhiem), can nhac ma hoa/xoa du lieu khi khong con can thiet, va co
   thong bao/dong y phu hop voi khach hang.
-- **File session Zalo va service account JSON** trong `zalo-session/` va `credentials/` tuong duong
-  quyen dang nhap tai khoan - **khong commit vao git** (da them vao `.gitignore`), bao mat nhu mat khau.
+- **File session Zalo** (`zalo-session/`) va **file database** (`data/*.sqlite3`, chua ca API key
+  Gemini va private key cua Google service account duoi dang van ban) tuong duong quyen dang nhap
+  tai khoan - **khong commit vao git** (da them vao `.gitignore`), sao luu/bao mat nhu mat khau.
+  Trang Admin dat sau HTTP Basic Auth - doi mat khau mac dinh va **chi mo cong `PORT` cho mang noi bo
+  hoac dat sau VPN/reverse proxy co HTTPS** khi trien khai thuc te, vi Basic Auth gui mat khau ro
+  qua HTTP se lo neu khong co TLS.
 
 ## OCR: Gemini (tra phi) vs cac lua chon mien phi
 

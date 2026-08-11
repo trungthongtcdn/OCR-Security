@@ -6,7 +6,22 @@ export interface Employee {
   name: string;
   monthlyQuota: number;
   active: boolean;
+  isAdmin: boolean;
   createdAt: string;
+}
+
+export interface EmployeeInput {
+  zaloId: string;
+  name: string;
+  monthlyQuota: number;
+  isAdmin?: boolean;
+}
+
+export interface EmployeeUpdate {
+  name?: string;
+  monthlyQuota?: number;
+  active?: boolean;
+  isAdmin?: boolean;
 }
 
 interface EmployeeRow {
@@ -15,6 +30,7 @@ interface EmployeeRow {
   name: string;
   monthly_quota: number;
   active: number;
+  is_admin: number;
   created_at: string;
 }
 
@@ -25,12 +41,20 @@ function mapRow(row: EmployeeRow): Employee {
     name: row.name,
     monthlyQuota: row.monthly_quota,
     active: row.active === 1,
+    isAdmin: row.is_admin === 1,
     createdAt: row.created_at,
   };
 }
 
 export class EmployeeRepo {
   constructor(private readonly db: DB) {}
+
+  findById(id: number): Employee | undefined {
+    const row = this.db
+      .prepare<[number], EmployeeRow>("SELECT * FROM employees WHERE id = ?")
+      .get(id);
+    return row ? mapRow(row) : undefined;
+  }
 
   findByZaloId(zaloId: string): Employee | undefined {
     const row = this.db
@@ -59,12 +83,44 @@ export class EmployeeRepo {
     return this.findByZaloId(zaloId) ?? this.mustFindById(Number(info.lastInsertRowid));
   }
 
+  /** Them/cap nhat 1 NVKD thu cong tu trang Admin (vi du dang ky truoc khi ho tung nhan tin). */
+  upsertManual(input: EmployeeInput): Employee {
+    this.db
+      .prepare(
+        `INSERT INTO employees (zalo_id, name, monthly_quota, is_admin) VALUES (?, ?, ?, ?)
+         ON CONFLICT(zalo_id) DO UPDATE SET name = excluded.name, monthly_quota = excluded.monthly_quota, is_admin = excluded.is_admin`,
+      )
+      .run(input.zaloId, input.name, input.monthlyQuota, input.isAdmin ? 1 : 0);
+    return this.mustFindByZaloId(input.zaloId);
+  }
+
+  updateById(id: number, update: EmployeeUpdate): Employee | undefined {
+    const current = this.findById(id);
+    if (!current) return undefined;
+    this.db
+      .prepare(
+        "UPDATE employees SET name = ?, monthly_quota = ?, active = ?, is_admin = ? WHERE id = ?",
+      )
+      .run(
+        update.name ?? current.name,
+        update.monthlyQuota ?? current.monthlyQuota,
+        (update.active ?? current.active) ? 1 : 0,
+        (update.isAdmin ?? current.isAdmin) ? 1 : 0,
+        id,
+      );
+    return this.findById(id);
+  }
+
   mustFindById(id: number): Employee {
-    const row = this.db
-      .prepare<[number], EmployeeRow>("SELECT * FROM employees WHERE id = ?")
-      .get(id);
-    if (!row) throw new Error(`Khong tim thay nhan vien id=${id}`);
-    return mapRow(row);
+    const found = this.findById(id);
+    if (!found) throw new Error(`Khong tim thay nhan vien id=${id}`);
+    return found;
+  }
+
+  mustFindByZaloId(zaloId: string): Employee {
+    const found = this.findByZaloId(zaloId);
+    if (!found) throw new Error(`Khong tim thay nhan vien zalo_id=${zaloId}`);
+    return found;
   }
 
   setMonthlyQuota(zaloId: string, quota: number): Employee | undefined {
@@ -80,6 +136,10 @@ export class EmployeeRepo {
       .prepare("UPDATE employees SET active = ? WHERE zalo_id = ?")
       .run(active ? 1 : 0, zaloId);
     return this.findByZaloId(zaloId);
+  }
+
+  isAdmin(zaloId: string): boolean {
+    return this.findByZaloId(zaloId)?.isAdmin ?? false;
   }
 
   listAll(): Employee[] {

@@ -1,21 +1,20 @@
 import { ThreadType, type Message } from "zca-js";
 import type { EmployeeRepo } from "../db/employeeRepo.js";
 import { logger } from "../logger.js";
-import type { OcrPipeline } from "../pipeline/ocrPipeline.js";
+import type { ServiceRegistry } from "../runtime/serviceRegistry.js";
 import type { QuotaService } from "../quota/quotaService.js";
 import type { CompanyRepo } from "../db/companyRepo.js";
 import { extractImageUrl, getTextContent } from "./attachment.js";
 import { parseCommand } from "./commandParser.js";
-import type { ZaloClient } from "./zaloClient.js";
+import type { ZaloSessionManager } from "./zaloSession.js";
 
 export class MessageRouter {
   constructor(
-    private readonly zaloClient: ZaloClient,
+    private readonly zaloSession: ZaloSessionManager,
     private readonly quotaService: QuotaService,
     private readonly employeeRepo: EmployeeRepo,
     private readonly companyRepo: CompanyRepo,
-    private readonly ocrPipeline: OcrPipeline,
-    private readonly adminZaloIds: Set<string>,
+    private readonly serviceRegistry: ServiceRegistry,
   ) {}
 
   async handle(message: Message): Promise<void> {
@@ -24,7 +23,7 @@ export class MessageRouter {
 
     const senderId = message.data.uidFrom;
     const senderName = message.data.dName || senderId;
-    const isAdmin = this.adminZaloIds.has(senderId);
+    const isAdmin = this.employeeRepo.isAdmin(senderId);
 
     const imageUrl = extractImageUrl(message);
     if (imageUrl) {
@@ -48,21 +47,24 @@ export class MessageRouter {
 
     let reply: string;
     try {
+      const pipeline = this.serviceRegistry.getPipeline();
       const response = await fetch(imageUrl);
       if (!response.ok) throw new Error(`tai anh that bai: HTTP ${response.status}`);
       const mimeType = response.headers.get("content-type") ?? "image/jpeg";
       const buffer = Buffer.from(await response.arrayBuffer());
-      const result = await this.ocrPipeline.processImage(employee, {
+      const result = await pipeline.processImage(employee, {
         base64Data: buffer.toString("base64"),
         mimeType,
       });
       reply = result.message;
     } catch (err) {
       logger.error({ err, senderId }, "loi khi xu ly anh tu Zalo");
-      reply = "Xin loi, khong tai duoc anh ban gui. Vui long thu gui lai.";
+      reply = err instanceof Error && err.message.includes("chua duoc cau hinh")
+        ? "He thong OCR chua duoc cau hinh xong. Vui long lien he Admin."
+        : "Xin loi, khong tai duoc anh ban gui. Vui long thu gui lai.";
     }
 
-    await this.zaloClient.reply(message.threadId, message.type, reply);
+    await this.zaloSession.reply(message.threadId, message.type, reply);
   }
 
   private async handleText(
@@ -75,7 +77,7 @@ export class MessageRouter {
     const command = parseCommand(text, isAdmin);
     const reply = this.executeCommand(command, senderId, senderName);
     if (reply) {
-      await this.zaloClient.reply(message.threadId, message.type, reply);
+      await this.zaloSession.reply(message.threadId, message.type, reply);
     }
   }
 
@@ -86,7 +88,7 @@ export class MessageRouter {
   ): string | undefined {
     switch (command.kind) {
       case "help":
-        return this.helpMessage(this.adminZaloIds.has(senderId));
+        return this.helpMessage(this.employeeRepo.isAdmin(senderId));
 
       case "check_own_quota": {
         const employee = this.quotaService.registerOrGetEmployee(senderId, senderName);

@@ -18,7 +18,7 @@ describe("QuotaService", () => {
       employeeRepo,
       new UsageRepo(db),
       new CompanyRepo(db),
-      3, // default employee monthly quota
+      () => 3, // default employee monthly quota
     );
   });
 

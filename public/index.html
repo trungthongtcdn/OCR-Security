@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OCR-Security - Trang quan tri</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<header class="topbar">
+  <h1>OCR-Security</h1>
+  <span class="subtitle">Trang quan tri</span>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="zalo">Ket noi Zalo</button>
+  <button class="tab-btn" data-tab="settings">Cau hinh he thong</button>
+  <button class="tab-btn" data-tab="employees">NVKD &amp; han muc</button>
+  <button class="tab-btn" data-tab="logs">Nhat ky OCR</button>
+</nav>
+
+<main>
+  <!-- TAB: ZALO -->
+  <section id="tab-zalo" class="tab-panel active">
+    <h2>Ket noi Zalo (nick Admin)</h2>
+    <p class="hint">
+      Tai khoan Zalo ca nhan nay se duoc dung de nhan anh tu NVKD va tra loi tu dong.
+      <strong>Khong dung tai khoan Zalo quan trong</strong> - day la thu vien khong chinh thuc,
+      Zalo co the khoa tai khoan bat cu luc nao.
+    </p>
+    <div id="zalo-status" class="status-box">Dang tai...</div>
+    <div id="zalo-qr-wrap" class="qr-wrap hidden">
+      <img id="zalo-qr" alt="QR dang nhap Zalo" />
+      <p>Mo app Zalo tren dien thoai cua Admin &rarr; Quet QR de dang nhap.</p>
+    </div>
+    <div class="actions">
+      <button id="btn-zalo-login" class="btn btn-primary">Dang nhap Zalo</button>
+      <button id="btn-zalo-logout" class="btn btn-danger hidden">Dang xuat</button>
+    </div>
+  </section>
+
+  <!-- TAB: SETTINGS -->
+  <section id="tab-settings" class="tab-panel">
+    <h2>Cau hinh he thong</h2>
+
+    <form id="form-gemini" class="card">
+      <h3>Gemini OCR</h3>
+      <label>API Key <span id="gemini-key-status" class="badge"></span>
+        <input type="password" id="gemini-api-key" placeholder="Nhap de thay doi API key (de trong neu giu nguyen)" autocomplete="off" />
+      </label>
+      <label>Model
+        <select id="gemini-model">
+          <option value="gemini-2.5-flash">gemini-2.5-flash (nhanh, re)</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro (chinh xac hon, dat hon)</option>
+        </select>
+      </label>
+      <button type="submit" class="btn btn-primary">Luu Gemini</button>
+      <span class="save-msg" data-for="form-gemini"></span>
+    </form>
+
+    <form id="form-sheets" class="card">
+      <h3>Google Sheets</h3>
+      <label>Google Sheet ID
+        <input type="text" id="sheet-id" placeholder="ID trong URL cua Google Sheet" />
+      </label>
+      <label>Ten tab GPLX
+        <input type="text" id="sheet-tab-license" />
+      </label>
+      <label>Ten tab Bao hiem
+        <input type="text" id="sheet-tab-insurance" />
+      </label>
+      <label>Service Account JSON <span id="sa-status" class="badge"></span>
+        <textarea id="sa-json" rows="5" placeholder='Dan noi dung file JSON cua Google service account vao day (de trong neu giu nguyen)'></textarea>
+      </label>
+      <p class="hint" id="sa-email-hint"></p>
+      <button type="submit" class="btn btn-primary">Luu Google Sheets</button>
+      <span class="save-msg" data-for="form-sheets"></span>
+    </form>
+
+    <form id="form-quota" class="card">
+      <h3>Han muc mac dinh</h3>
+      <label>Han muc toan cong ty / thang
+        <input type="number" min="0" id="company-quota" />
+      </label>
+      <label>Han muc mac dinh cho 1 NVKD moi / thang
+        <input type="number" min="0" id="default-employee-quota" />
+      </label>
+      <button type="submit" class="btn btn-primary">Luu han muc</button>
+      <span class="save-msg" data-for="form-quota"></span>
+    </form>
+  </section>
+
+  <!-- TAB: EMPLOYEES -->
+  <section id="tab-employees" class="tab-panel">
+    <h2>NVKD &amp; han muc OCR</h2>
+    <p class="hint">Thang hien tai: <strong id="current-month">-</strong></p>
+
+    <form id="form-add-employee" class="card">
+      <h3>Them NVKD</h3>
+      <label>Zalo ID <input type="text" id="new-zalo-id" placeholder="zalo_id cua NVKD" required /></label>
+      <label>Ten <input type="text" id="new-name" placeholder="Ten hien thi" required /></label>
+      <label>Han muc/thang <input type="number" min="0" id="new-quota" placeholder="De trong = dung han muc mac dinh" /></label>
+      <label class="checkbox"><input type="checkbox" id="new-is-admin" /> La Admin (duoc dung lenh quan tri qua Zalo)</label>
+      <button type="submit" class="btn btn-primary">Them</button>
+      <span class="save-msg" data-for="form-add-employee"></span>
+    </form>
+
+    <table class="data-table" id="employee-table">
+      <thead>
+        <tr>
+          <th>Ten</th><th>Zalo ID</th><th>Han muc</th><th>Da dung</th><th>Con lai</th>
+          <th>Hoat dong</th><th>Admin</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="employee-tbody"></tbody>
+    </table>
+  </section>
+
+  <!-- TAB: LOGS -->
+  <section id="tab-logs" class="tab-panel">
+    <h2>Nhat ky OCR gan day</h2>
+    <button id="btn-refresh-logs" class="btn">Lam moi</button>
+    <table class="data-table">
+      <thead>
+        <tr><th>Thoi gian</th><th>NVKD</th><th>Loai giay to</th><th>Trang thai</th><th>Ghi chu</th></tr>
+      </thead>
+      <tbody id="logs-tbody"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

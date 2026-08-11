@@ -24,12 +24,12 @@ export class QuotaService {
     private readonly employeeRepo: EmployeeRepo,
     private readonly usageRepo: UsageRepo,
     private readonly companyRepo: CompanyRepo,
-    private readonly defaultEmployeeMonthlyQuota: number,
+    private readonly getDefaultEmployeeMonthlyQuota: () => number,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
   registerOrGetEmployee(zaloId: string, name: string): Employee {
-    return this.employeeRepo.getOrCreate(zaloId, name, this.defaultEmployeeMonthlyQuota);
+    return this.employeeRepo.getOrCreate(zaloId, name, this.getDefaultEmployeeMonthlyQuota());
   }
 
   getStatus(employee: Employee): QuotaStatus {

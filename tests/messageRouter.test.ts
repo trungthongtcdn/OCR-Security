@@ -4,10 +4,10 @@ import { CompanyRepo } from "../src/db/companyRepo.js";
 import { ensureCompanyConfig, openDatabase, type DB } from "../src/db/database.js";
 import { EmployeeRepo } from "../src/db/employeeRepo.js";
 import { UsageRepo } from "../src/db/usageRepo.js";
-import type { OcrPipeline } from "../src/pipeline/ocrPipeline.js";
+import type { ServiceRegistry } from "../src/runtime/serviceRegistry.js";
 import { QuotaService } from "../src/quota/quotaService.js";
 import { MessageRouter } from "../src/zalo/messageRouter.js";
-import type { ZaloClient } from "../src/zalo/zaloClient.js";
+import type { ZaloSessionManager } from "../src/zalo/zaloSession.js";
 
 function fakeTextMessage(uidFrom: string, dName: string, content: string): Message {
   return {
@@ -33,24 +33,25 @@ describe("MessageRouter (text commands)", () => {
     ensureCompanyConfig(db, 100);
     employeeRepo = new EmployeeRepo(db);
     companyRepo = new CompanyRepo(db);
-    const quotaService = new QuotaService(employeeRepo, new UsageRepo(db), companyRepo, 10);
+    const quotaService = new QuotaService(employeeRepo, new UsageRepo(db), companyRepo, () => 10);
+
+    employeeRepo.upsertManual({ zaloId: ADMIN_ID, name: "Admin", monthlyQuota: 999999, isAdmin: true });
 
     replies = [];
-    const fakeZaloClient = {
+    const fakeZaloSession = {
       reply: async (_threadId: string, _type: ThreadType, text: string) => {
         replies.push(text);
       },
-    } as unknown as ZaloClient;
+    } as unknown as ZaloSessionManager;
 
-    const fakeOcrPipeline = {} as OcrPipeline;
+    const fakeServiceRegistry = {} as ServiceRegistry;
 
     router = new MessageRouter(
-      fakeZaloClient,
+      fakeZaloSession,
       quotaService,
       employeeRepo,
       companyRepo,
-      fakeOcrPipeline,
-      new Set([ADMIN_ID]),
+      fakeServiceRegistry,
     );
   });
 

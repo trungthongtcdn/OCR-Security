@@ -1,18 +1,19 @@
 import { google, type sheets_v4 } from "googleapis";
+import type { ServiceAccountCredentials } from "../db/settingsRepo.js";
 import { INSURANCE_HEADER, LICENSE_HEADER } from "./rowMapper.js";
 
 export class GoogleSheetsClient {
   private sheetsApi: sheets_v4.Sheets | undefined;
 
   constructor(
-    private readonly serviceAccountFile: string,
+    private readonly credentials: ServiceAccountCredentials,
     private readonly sheetId: string,
   ) {}
 
   private async getApi(): Promise<sheets_v4.Sheets> {
     if (this.sheetsApi) return this.sheetsApi;
     const auth = new google.auth.GoogleAuth({
-      keyFile: this.serviceAccountFile,
+      credentials: this.credentials,
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
     this.sheetsApi = google.sheets({ version: "v4", auth });

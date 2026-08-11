@@ -43,4 +43,28 @@ export class UsageRepo {
       .get(month);
     return row?.c ?? 0;
   }
+
+  listRecent(limit: number): UsageLogEntry[] {
+    return this.db
+      .prepare<[number], UsageLogEntry>(
+        `SELECT usage_logs.id as id, employees.name as employeeName, employees.zalo_id as employeeZaloId,
+                doc_type as docType, status, month, detail, usage_logs.created_at as createdAt
+         FROM usage_logs
+         JOIN employees ON employees.id = usage_logs.employee_id
+         ORDER BY usage_logs.id DESC
+         LIMIT ?`,
+      )
+      .all(limit);
+  }
+}
+
+export interface UsageLogEntry {
+  id: number;
+  employeeName: string;
+  employeeZaloId: string;
+  docType: string;
+  status: string;
+  month: string;
+  detail: string | null;
+  createdAt: string;
 }
