@@ -162,12 +162,30 @@ document.getElementById("form-quota").addEventListener("submit", async (e) => {
 });
 
 // ---------- Employees ----------
+let allEmployees = [];
+
 async function loadEmployees() {
   const { month, employees } = await api("/api/employees");
   document.getElementById("current-month").textContent = month;
+  allEmployees = employees;
+  renderEmployeeTable();
+}
+
+function renderEmployeeTable() {
+  const query = document.getElementById("employee-search").value.trim().toLowerCase();
+  const filtered = query
+    ? allEmployees.filter(
+        (e) => e.name.toLowerCase().includes(query) || e.zaloId.toLowerCase().includes(query),
+      )
+    : allEmployees;
+
   const tbody = document.getElementById("employee-tbody");
   tbody.innerHTML = "";
-  for (const emp of employees) {
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="hint">${allEmployees.length === 0 ? "Chua co NVKD nao." : "Khong tim thay ket qua."}</td></tr>`;
+    return;
+  }
+  for (const emp of filtered) {
     const tr = document.createElement("tr");
     if (!emp.active) tr.classList.add("inactive");
     tr.innerHTML = `
@@ -198,6 +216,43 @@ async function loadEmployees() {
   }
 }
 
+document.getElementById("employee-search").addEventListener("input", renderEmployeeTable);
+
+// -- Cach 1: tim theo so dien thoai --
+document.getElementById("btn-lookup-phone").addEventListener("click", async () => {
+  const phone = document.getElementById("lookup-phone").value.trim();
+  const resultBox = document.getElementById("lookup-result");
+  if (!phone) return;
+  resultBox.classList.remove("hidden");
+  resultBox.innerHTML = "Dang tim...";
+  try {
+    const { user } = await api(`/api/zalo/find-user?phone=${encodeURIComponent(phone)}`);
+    resultBox.innerHTML = `
+      <p>Tim thay: <strong>${escapeHtml(user.displayName)}</strong> (Zalo ID: ${escapeHtml(user.uid)})</p>
+      <label>Han muc/thang <input type="number" min="0" id="lookup-quota" placeholder="De trong = dung han muc mac dinh" /></label>
+      <label class="checkbox"><input type="checkbox" id="lookup-is-admin" /> La Admin (duoc dung lenh quan tri qua Zalo)</label>
+      <button id="btn-lookup-confirm-add" class="btn btn-primary" type="button">Them NVKD nay</button>
+    `;
+    document.getElementById("btn-lookup-confirm-add").addEventListener("click", async () => {
+      const quotaRaw = document.getElementById("lookup-quota").value;
+      const isAdmin = document.getElementById("lookup-is-admin").checked;
+      try {
+        const body = { zaloId: user.uid, name: user.displayName, isAdmin };
+        if (quotaRaw) body.monthlyQuota = Number(quotaRaw);
+        await api("/api/employees", { method: "POST", body: JSON.stringify(body) });
+        resultBox.classList.add("hidden");
+        document.getElementById("lookup-phone").value = "";
+        loadEmployees();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  } catch (err) {
+    resultBox.innerHTML = `<span class="save-msg error">${escapeHtml(err.message)}</span>`;
+  }
+});
+
+// -- Cach 2: nhap Zalo ID truc tiep --
 document.getElementById("form-add-employee").addEventListener("submit", async (e) => {
   e.preventDefault();
   const zaloId = document.getElementById("new-zalo-id").value.trim();

@@ -97,9 +97,11 @@ Trang Admin co 4 tab:
      khong can dat file tren server). Trang se hien email cua service account de ban **Share**
      Google Sheet cho email do voi quyen Editor. Ung dung tu tao tab + dong tieu de neu chua co.
    - **Han muc mac dinh**: han muc toan cong ty / thang va han muc mac dinh cho 1 NVKD moi.
-3. **NVKD & han muc**: bang danh sach NVKD (tu dong xuat hien sau khi ho nhan tin lan dau, hoac
-   Admin them thu cong qua form "Them NVKD" bang zalo_id + ten). Sua han muc, bat/tat hoat dong,
-   danh dau la Admin (cho phep dung lenh quan tri qua Zalo) - luu ngay tren bang.
+3. **NVKD & han muc**: bang danh sach NVKD (tu dong xuat hien sau khi ho nhan tin lan dau). Admin
+   khong can biet/nhap Zalo ID thu cong - co the **them NVKD bang so dien thoai**, he thong tu tra
+   ra Zalo ID va ten (yeu cau da ket noi Zalo o tab 1); cach nhap Zalo ID truc tiep van con nhung
+   dat trong muc "nang cao" cho truong hop can thiet. Bang co o **tim kiem theo ten/ID**. Sua han
+   muc, bat/tat hoat dong, danh dau la Admin (cho phep dung lenh quan tri qua Zalo) - luu ngay tren bang.
 4. **Nhat ky OCR**: xem cac lan OCR gan day (thanh cong/that bai) de kiem tra he thong hoat dong dung.
 
 Cau hinh luu vao SQLite; moi lan Admin luu cau hinh Gemini/Sheets, he thong tu dong dung cau hinh

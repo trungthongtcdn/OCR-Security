@@ -95,15 +95,34 @@
     <h2>NVKD &amp; han muc OCR</h2>
     <p class="hint">Thang hien tai: <strong id="current-month">-</strong></p>
 
-    <form id="form-add-employee" class="card">
-      <h3>Them NVKD</h3>
-      <label>Zalo ID <input type="text" id="new-zalo-id" placeholder="zalo_id cua NVKD" required /></label>
-      <label>Ten <input type="text" id="new-name" placeholder="Ten hien thi" required /></label>
-      <label>Han muc/thang <input type="number" min="0" id="new-quota" placeholder="De trong = dung han muc mac dinh" /></label>
-      <label class="checkbox"><input type="checkbox" id="new-is-admin" /> La Admin (duoc dung lenh quan tri qua Zalo)</label>
-      <button type="submit" class="btn btn-primary">Them</button>
-      <span class="save-msg" data-for="form-add-employee"></span>
-    </form>
+    <div class="card">
+      <h3>Them NVKD - Cach 1: tim theo so dien thoai (khuyen nghi)</h3>
+      <p class="hint">Chi dung duoc khi da <strong>ket noi Zalo</strong> o tab dau tien. He thong se tu tra ra
+        Zalo ID cua NVKD tu so dien thoai, Admin khong can biet/nhap ID thu cong.</p>
+      <div class="phone-lookup-row">
+        <input type="text" id="lookup-phone" placeholder="So dien thoai NVKD, vd: 0912345678" />
+        <button id="btn-lookup-phone" type="button" class="btn">Tim</button>
+      </div>
+      <div id="lookup-result" class="lookup-result hidden"></div>
+    </div>
+
+    <details class="card">
+      <summary><strong>Them NVKD - Cach 2: nhap Zalo ID truc tiep (nang cao)</strong></summary>
+      <p class="hint">Chi dung khi khong tim duoc bang so dien thoai. Co the lay Zalo ID tu tab "Nhat ky OCR"
+        sau khi NVKD da tung nhan tin/gui anh cho Zalo Admin.</p>
+      <form id="form-add-employee">
+        <label>Zalo ID <input type="text" id="new-zalo-id" placeholder="zalo_id cua NVKD" required /></label>
+        <label>Ten <input type="text" id="new-name" placeholder="Ten hien thi" required /></label>
+        <label>Han muc/thang <input type="number" min="0" id="new-quota" placeholder="De trong = dung han muc mac dinh" /></label>
+        <label class="checkbox"><input type="checkbox" id="new-is-admin" /> La Admin (duoc dung lenh quan tri qua Zalo)</label>
+        <button type="submit" class="btn btn-primary">Them</button>
+        <span class="save-msg" data-for="form-add-employee"></span>
+      </form>
+    </details>
+
+    <label class="search-box">Tim NVKD trong danh sach
+      <input type="text" id="employee-search" placeholder="Go ten hoac Zalo ID de loc..." />
+    </label>
 
     <table class="data-table" id="employee-table">
       <thead>

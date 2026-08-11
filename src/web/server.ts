@@ -82,6 +82,24 @@ export function createWebServer(deps: WebServerDeps): Express {
     res.json({ ok: true });
   });
 
+  app.get("/api/zalo/find-user", async (req, res) => {
+    const phone = typeof req.query.phone === "string" ? req.query.phone.trim() : "";
+    if (!phone) {
+      res.status(400).json({ ok: false, error: "Thieu so dien thoai" });
+      return;
+    }
+    try {
+      const user = await zaloSession.findUserByPhone(phone);
+      if (!user) {
+        res.status(404).json({ ok: false, error: "Khong tim thay nguoi dung Zalo voi so nay" });
+        return;
+      }
+      res.json({ ok: true, user });
+    } catch (err) {
+      res.status(400).json({ ok: false, error: errorMessage(err) });
+    }
+  });
+
   app.get("/api/settings", (_req, res) => {
     res.json({
       geminiApiKeySet: Boolean(settingsRepo.getGeminiApiKey()),

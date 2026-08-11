@@ -211,4 +211,15 @@ export class ZaloSessionManager extends EventEmitter {
   async reply(threadId: string, threadType: ThreadType, text: string): Promise<void> {
     await this.getApi().sendMessage({ msg: text }, threadId, threadType);
   }
+
+  /**
+   * Tra cuu zalo_id + ten hien thi tu so dien thoai, de trang Admin them NVKD ma khong
+   * can biet/nhap zalo_id thu cong. Chi dung duoc khi da dang nhap Zalo. Tra ve undefined
+   * neu khong tim thay nguoi dung voi so dien thoai nay (hoac ho khong cho phep tim kiem).
+   */
+  async findUserByPhone(phone: string): Promise<{ uid: string; displayName: string } | undefined> {
+    const user = await this.getApi().findUser(phone);
+    if (!user?.uid) return undefined;
+    return { uid: user.uid, displayName: user.display_name || user.zalo_name || user.uid };
+  }
 }
