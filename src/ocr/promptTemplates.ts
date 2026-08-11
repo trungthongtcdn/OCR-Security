@@ -13,7 +13,18 @@ Nhiem vu:
 5. Neu mot truong la chu viet tay va ban khong chac chan 100%, van dien gia tri doan tot nhat, nhung PHAI liet ke dung ten field do (vi du "ownerName", "address") vao mang "lowConfidenceFields".
 6. Dien "rawText" bang toan bo van ban doc duoc tren anh (khong can sap xep), de con nguoi doi chieu khi can.
 7. Tra ve "confidence" tu 0 den 1 the hien do tin cay tong the cua ket qua.
-8. Khong bia dat thong tin khong co tren anh.`;
+8. Khong bia dat thong tin khong co tren anh.
+
+QUAN TRONG - doc "chassisNumber" (so khung) va "engineNumber" (so may): day la ma chu+so DAP/IN
+tren giay (khong phai chu viet tay, nhung font dap thuong meo/mo, de doc nham), va sai 1 ky tu la
+sai toan bo ma so - hau qua nghiem trong hon cac truong khac. Vi vay:
+- Doc TUNG KY TU MOT that can than, KHONG "doan" hay "tu dong sua" ky tu cho giong 1 tu/chuoi quen
+  thuoc - chi ghi lai chinh xac nhung gi nhin thay, kho co nghia.
+- Dac biet can than de KHONG nham lan: O va 0 (so khong), I/L va 1, B va 8, S va 5, Z va 2, G va 6,
+  va KHONG duoc tu y THEM hay BOT ky tu (vi du nhin lan chu O thanh 2 chu "OL" hoac nguoc lai).
+- Neu ban khong chac chan TUYET DOI 100% ve TUNG ky tu trong so khung/so may, BAT BUOC phai liet ke
+  "chassisNumber"/"engineNumber" vao "lowConfidenceFields" - nguong chac chan cho 2 truong nay phai
+  cao hon nhieu so voi cac truong con lai (vi du ho ten, dia chi).`;
 
 export const USER_PROMPT =
   "Hay boc tach thong tin tu anh giay to xe duoi day (giay dang ky xe hoac giay chung nhan bao hiem xe) theo dung schema JSON da cung cap. Neu anh khong phai 1 trong 2 loai giay to nay, tra ve documentType=\"unknown\".";

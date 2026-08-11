@@ -43,7 +43,10 @@ export class GeminiOcrClient {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: extractionResponseSchema,
-        temperature: 0.1,
+        temperature: 0,
+        // Cho model "suy nghi" truoc khi tra loi (ngan sach tu dong) - giup doc chinh xac hon
+        // cac ma chu+so kho (so khung/so may) thay vi doan nhanh theo "nhin quen mat".
+        thinkingConfig: { thinkingBudget: -1 },
       },
     });
 

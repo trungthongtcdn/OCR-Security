@@ -160,6 +160,7 @@ export class OcrPipeline {
     if (extraction.lowConfidenceFields.length > 0) {
       lines.push(`(Luu y: kiem tra lai thu cong cac truong: ${extraction.lowConfidenceFields.join(", ")})`);
     }
+    lines.push("(*) So khung/So may la ma so quan trong, luon doi chieu lai voi ban goc truoc khi dung lam ho so chinh thuc.");
     lines.push("Da luu vao Google Sheet.");
     lines.push(
       `Han muc thang ${status.month}: con ${status.employeeRemaining}/${status.employeeQuota} luot cua ban.`,

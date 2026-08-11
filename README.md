@@ -194,6 +194,14 @@ ton gap doi chi phi). Neu chat viet tay van sai nhieu sau khi da co retry nay, c
 tiep theo thuong la **cai thien chat luong anh dau vao** (chup thang, du sang, khong bi loa/mo) hon
 la doi model - co the can nhac them buoc nhac NVKD chup lai neu anh qua mo/toi truoc khi OCR.
 
+Rieng **so khung/so may** (ma chu+so dap/in, sai 1 ky tu la sai toan bo ma) de bi doc nham hon ca
+chu viet tay thuong (vi du nham `O`/`0`, them/bot ky tu do font dap meo) - prompt da duoc day manh
+canh bao cu the cac cap ky tu de nham, yeu cau doc tung ky tu va ha thap nguong "chac chan" rieng
+cho 2 truong nay (de kich hoat retry som hon), bat "thinking" (`thinkingConfig`) de Gemini suy nghi
+ky truoc khi tra loi thay vi doan nhanh, va giam `temperature` ve 0 de ket qua on dinh hon. Do day
+la truong rui ro cao, tin nhan tra loi Zalo **luon** nhac NVKD doi chieu so khung/so may voi ban
+goc truoc khi dung lam ho so chinh thuc, du Gemini co bao "chac chan" hay khong.
+
 ## Gioi han cua MVP / huong mo rong
 
 - Chi xu ly chat 1-1 (User), chua ho tro group.
