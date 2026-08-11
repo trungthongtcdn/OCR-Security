@@ -1,0 +1,36 @@
+{
+  "name": "ocr-security",
+  "version": "0.1.0",
+  "description": "OCR tu dong bang lai xe / giay bao hiem cu qua Zalo, luu Google Sheets, quan ly han muc OCR theo NVKD va cong ty",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:init": "tsx scripts/init-db.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^1.9.0",
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0",
+    "pino": "^9.5.0",
+    "zca-js": "^2.1.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.log
+data/
+zalo-session/
+credentials/
+*.sqlite
+*.sqlite3
+.DS_Store
