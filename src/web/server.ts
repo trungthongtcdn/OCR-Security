@@ -56,7 +56,13 @@ export function createWebServer(deps: WebServerDeps): Express {
 
   const app = express();
   app.use(express.json({ limit: "2mb" }));
-  app.use(basicAuthMiddleware(deps.adminUser, deps.adminPassword));
+  if (deps.adminPassword) {
+    app.use(basicAuthMiddleware(deps.adminUser, deps.adminPassword));
+  } else {
+    logger.warn(
+      "ADMIN_PANEL_PASSWORD dang de trong: trang Admin KHONG yeu cau dang nhap, bat ky ai co duong dan deu vao duoc.",
+    );
+  }
   app.use(express.static(publicDir));
 
   app.get("/api/status", (_req, res) => {

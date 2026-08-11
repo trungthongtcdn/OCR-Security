@@ -65,7 +65,7 @@ cp .env.example .env
 | Bien | Y nghia |
 |---|---|
 | `PORT` | Cong chay trang Admin (mac dinh 4000) |
-| `ADMIN_PANEL_USER` / `ADMIN_PANEL_PASSWORD` | Tai khoan dang nhap trang Admin (HTTP Basic Auth) - **bat buoc doi mat khau mac dinh** |
+| `ADMIN_PANEL_USER` / `ADMIN_PANEL_PASSWORD` | Tai khoan dang nhap trang Admin (HTTP Basic Auth). **De trong `ADMIN_PANEL_PASSWORD` = khong yeu cau dang nhap** (mac dinh, de test nhanh); dien mat khau vao de bat lai dang nhap |
 | `DATABASE_FILE` | Duong dan file SQLite (luu ca cau hinh, han muc, NVKD, nhat ky OCR) |
 | `ZALO_SESSION_DIR` | Thu muc luu session dang nhap Zalo, tranh phai quet QR moi lan chay |
 
@@ -73,8 +73,14 @@ cp .env.example .env
 npm run build && npm start   # hoac: npm run dev de chay bang tsx (tu reload)
 ```
 
-Mo trinh duyet toi `http://localhost:4000` (hoac IP:PORT cua server), dang nhap bang
+Mo trinh duyet toi `http://localhost:4000` (hoac IP:PORT cua server). Mac dinh **khong can dang nhap**
+(vao thang trang Admin); neu da dien `ADMIN_PANEL_PASSWORD` trong `.env` thi dang nhap bang
 `ADMIN_PANEL_USER` / `ADMIN_PANEL_PASSWORD`.
+
+> ⚠️ Khi chua dien `ADMIN_PANEL_PASSWORD`, **bat ky ai co duong dan** toi trang Admin deu xem/sua
+> duoc Gemini API key, thong tin Google Sheets, han muc va dang nhap Zalo. Chi de o che do mo nay
+> khi chay tren may ca nhan hoac mang noi bo tin cay; neu dua server ra internet (Railway, VPS...),
+> **bat buoc dien mat khau** truoc.
 
 ## Trang Admin
 
