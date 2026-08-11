@@ -56,9 +56,12 @@ async function main(): Promise<void> {
   });
 
   app.listen(config.web.port, () => {
+    const authNote = config.web.adminPassword
+      ? "dang nhap bang ADMIN_PANEL_USER/ADMIN_PANEL_PASSWORD"
+      : "khong yeu cau dang nhap";
     logger.info(
       { port: config.web.port },
-      `Trang Admin: http://localhost:${config.web.port} (dang nhap bang ADMIN_PANEL_USER/ADMIN_PANEL_PASSWORD)`,
+      `Trang Admin: http://localhost:${config.web.port} (${authNote})`,
     );
   });
 }
