@@ -6,6 +6,18 @@ export interface ServiceAccountCredentials {
   [key: string]: unknown;
 }
 
+/** Cac model Gemini da bi Google ngung phuc vu - neu DB dang luu gia tri nay thi coi nhu chua cau hinh, tu dong dung model mac dinh moi. */
+const RETIRED_GEMINI_MODELS = new Set([
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-001",
+  "gemini-2.0-flash-lite",
+  "gemini-2.0-flash-lite-001",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
+]);
+
 const KEYS = {
   geminiApiKey: "gemini_api_key",
   geminiModel: "gemini_model",
@@ -43,7 +55,9 @@ export class SettingsRepo {
   }
 
   getGeminiModel(): string {
-    return this.get(KEYS.geminiModel) ?? "gemini-2.5-flash";
+    const stored = this.get(KEYS.geminiModel);
+    if (!stored || RETIRED_GEMINI_MODELS.has(stored)) return "gemini-3.6-flash";
+    return stored;
   }
   setGeminiModel(value: string): void {
     this.set(KEYS.geminiModel, value);

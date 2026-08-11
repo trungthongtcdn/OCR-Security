@@ -168,14 +168,14 @@ gan het cac OCR engine truyen thong mien phi:
 
 | Giai phap | Chi phi | Doc chu viet tay | Ghi chu |
 |---|---|---|---|
-| **Gemini 2.5 Flash/Pro** (dang dung) | Tra phi theo token, co free tier gioi han | Tot | Model da ngon ngu, hieu ngu canh giay to VN, tra ve JSON co cau truc |
+| **Gemini 3.6 Flash / 3.5 Flash** (dang dung) | Tra phi theo token, co free tier gioi han | Tot | Model da ngon ngu, hieu ngu canh giay to VN, tra ve JSON co cau truc |
 | Google Cloud Vision (`DOCUMENT_TEXT_DETECTION`) | Free tier 1000 don vi/thang, sau do tra phi | Trung binh | Doc chu in tot, chu viet tay kem hon Gemini nhieu |
 | Tesseract.js / Tesseract OCR | Mien phi, chay local | Kem | Gan nhu khong doc duoc chu viet tay, chi hop voi chu in ro net |
 
-**Khuyen nghi MVP:** dung Gemini nhu hien tai. Neu muon giam chi phi, co the: (1) dung
-`gemini-2.5-flash` (re hon `pro`) cho da so truong hop, (2) chi goi lai `pro` khi `flash` tra ve
-`confidence` thap hoac nhieu `lowConfidenceFields`, (3) theo doi chi phi qua he thong han muc san co
-trong du an nay.
+**Khuyen nghi MVP:** dung Gemini nhu hien tai, model mac dinh `gemini-3.6-flash`. Neu muon giam chi
+phi hon nua, co the doi sang `gemini-3.5-flash-lite` trong tab Cau hinh he thong. Luu y: cac model
+doi cu (`gemini-2.5-*`, `gemini-2.0-*`, `gemini-1.5-*`) da bi Google ngung phuc vu - he thong tu dong
+chuyen ve `gemini-3.6-flash` neu phat hien cau hinh dang tro toi mot model da retired.
 
 ## Gioi han cua MVP / huong mo rong
 
