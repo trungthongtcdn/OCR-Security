@@ -88,6 +88,16 @@ details.card form { margin-top: 4px; }
 }
 .lookup-result p { margin: 0 0 10px; }
 
+.group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.group-row:last-child { border-bottom: none; }
+
 .search-box {
   display: block;
   margin-bottom: 10px;

@@ -116,3 +116,78 @@ describe("MessageRouter (text commands)", () => {
     expect(replies[1]).toContain("Lenh danh cho Admin");
   });
 });
+
+describe("MessageRouter (group images)", () => {
+  const GROUP_ID = "group-1";
+
+  let db: DB;
+  let router: MessageRouter;
+  let employeeRepo: EmployeeRepo;
+  let replies: string[];
+  let processImageCalls: Array<{ zaloId: string }>;
+
+  function fakeGroupImageMessage(uidFrom: string, dName: string): Message {
+    return {
+      type: ThreadType.Group,
+      threadId: GROUP_ID,
+      isSelf: false,
+      data: { uidFrom, dName, content: { href: "http://example.com/a.jpg" } } as Message["data"],
+    } as Message;
+  }
+
+  beforeEach(() => {
+    db = openDatabase(":memory:");
+    ensureCompanyConfig(db, 100);
+    employeeRepo = new EmployeeRepo(db);
+    const companyRepo = new CompanyRepo(db);
+    const quotaService = new QuotaService(employeeRepo, new UsageRepo(db), companyRepo, () => 10);
+
+    replies = [];
+    processImageCalls = [];
+    const fakeZaloSession = {
+      reply: async (_threadId: string, _type: ThreadType, text: string) => {
+        replies.push(text);
+      },
+      downloadImage: async () => ({ buffer: Buffer.from("fake"), mimeType: "image/jpeg" }),
+    } as unknown as ZaloSessionManager;
+
+    const fakePipeline = {
+      processImage: async (employee: { zaloId: string }) => {
+        processImageCalls.push({ zaloId: employee.zaloId });
+        return { ok: true, message: "da xong" };
+      },
+    };
+    const fakeServiceRegistry = {
+      getPipeline: () => fakePipeline,
+    } as unknown as ServiceRegistry;
+
+    router = new MessageRouter(
+      fakeZaloSession,
+      quotaService,
+      employeeRepo,
+      companyRepo,
+      fakeServiceRegistry,
+    );
+  });
+
+  it("ignores images from a group the admin hasn't registered", async () => {
+    await router.handle(fakeGroupImageMessage("member-1", "A"));
+    expect(replies).toHaveLength(0);
+    expect(processImageCalls).toHaveLength(0);
+  });
+
+  it("processes images from a registered group, using the group's quota rather than the sender's", async () => {
+    employeeRepo.upsertManual({
+      zaloId: GROUP_ID,
+      name: "Nhom Kinh Doanh",
+      monthlyQuota: 50,
+      isGroup: true,
+    });
+
+    await router.handle(fakeGroupImageMessage("member-1", "A"));
+
+    expect(replies).toEqual(["da xong"]);
+    expect(processImageCalls).toEqual([{ zaloId: GROUP_ID }]);
+    expect(employeeRepo.findByZaloId("member-1")).toBeUndefined();
+  });
+});

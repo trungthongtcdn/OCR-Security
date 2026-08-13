@@ -224,6 +224,24 @@ export class ZaloSessionManager extends EventEmitter {
   }
 
   /**
+   * Liet ke cac nhom Zalo ma tai khoan Admin dang la thanh vien, de trang Admin tim/chon 1 nhom
+   * lam "NVKD" (nhieu nguoi trong nhom dung chung 1 han muc). Zalo khong co API tim kiem nhom
+   * theo ten nhu tim nguoi dung qua so dien thoai - tai khoan Admin phai da duoc them vao nhom
+   * do tren dien thoai truoc, trang Admin chi liet ke lai roi loc theo ten o phia trinh duyet.
+   */
+  async listGroups(): Promise<Array<{ id: string; name: string; totalMember: number }>> {
+    const api = this.getApi();
+    const all = await api.getAllGroups();
+    const groupIds = Object.keys(all.gridVerMap ?? {});
+    if (groupIds.length === 0) return [];
+    const info = await api.getGroupInfo(groupIds);
+    return Object.values(info.gridInfoMap)
+      .filter((group) => Boolean(group?.groupId && group.name))
+      .map((group) => ({ id: group.groupId, name: group.name, totalMember: group.totalMember }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /**
    * Tai anh dinh kem tu URL CDN cua Zalo. CDN nay yeu cau cookie phien dang nhap +
    * User-Agent hop le, fetch() thuong (khong cookie) se bi tu choi (403/HTML loi thay vi
    * anh) khien OCR bao "khong tai duoc anh" du NVKD gui anh binh thuong.

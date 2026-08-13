@@ -7,6 +7,8 @@ export interface Employee {
   monthlyQuota: number;
   active: boolean;
   isAdmin: boolean;
+  /** true = day la 1 nhom Zalo (zaloId la groupId) dung chung 1 han muc cho ca nhom, khong phai 1 nguoi. */
+  isGroup: boolean;
   createdAt: string;
 }
 
@@ -15,6 +17,7 @@ export interface EmployeeInput {
   name: string;
   monthlyQuota: number;
   isAdmin?: boolean;
+  isGroup?: boolean;
 }
 
 export interface EmployeeUpdate {
@@ -31,6 +34,7 @@ interface EmployeeRow {
   monthly_quota: number;
   active: number;
   is_admin: number;
+  is_group: number;
   created_at: string;
 }
 
@@ -42,6 +46,7 @@ function mapRow(row: EmployeeRow): Employee {
     monthlyQuota: row.monthly_quota,
     active: row.active === 1,
     isAdmin: row.is_admin === 1,
+    isGroup: row.is_group === 1,
     createdAt: row.created_at,
   };
 }
@@ -83,14 +88,15 @@ export class EmployeeRepo {
     return this.findByZaloId(zaloId) ?? this.mustFindById(Number(info.lastInsertRowid));
   }
 
-  /** Them/cap nhat 1 NVKD thu cong tu trang Admin (vi du dang ky truoc khi ho tung nhan tin). */
+  /** Them/cap nhat 1 NVKD (hoac 1 nhom Zalo) thu cong tu trang Admin, vi du dang ky truoc khi ho
+   * tung nhan tin, hoac chon 1 nhom tu danh sach nhom cua tai khoan Admin. */
   upsertManual(input: EmployeeInput): Employee {
     this.db
       .prepare(
-        `INSERT INTO employees (zalo_id, name, monthly_quota, is_admin) VALUES (?, ?, ?, ?)
+        `INSERT INTO employees (zalo_id, name, monthly_quota, is_admin, is_group) VALUES (?, ?, ?, ?, ?)
          ON CONFLICT(zalo_id) DO UPDATE SET name = excluded.name, monthly_quota = excluded.monthly_quota, is_admin = excluded.is_admin`,
       )
-      .run(input.zaloId, input.name, input.monthlyQuota, input.isAdmin ? 1 : 0);
+      .run(input.zaloId, input.name, input.monthlyQuota, input.isAdmin ? 1 : 0, input.isGroup ? 1 : 0);
     return this.mustFindByZaloId(input.zaloId);
   }
 

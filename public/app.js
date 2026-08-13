@@ -305,7 +305,7 @@ function renderEmployeeTable() {
   const tbody = document.getElementById("employee-tbody");
   tbody.innerHTML = "";
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="hint">${allEmployees.length === 0 ? "Chua co NVKD nao." : "Khong tim thay ket qua."}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="hint">${allEmployees.length === 0 ? "Chua co NVKD nao." : "Khong tim thay ket qua."}</td></tr>`;
     return;
   }
   for (const emp of filtered) {
@@ -313,6 +313,7 @@ function renderEmployeeTable() {
     if (!emp.active) tr.classList.add("inactive");
     tr.innerHTML = `
       <td>${escapeHtml(emp.name)}</td>
+      <td>${emp.isGroup ? '<span class="badge">Nhom</span>' : '<span class="badge ok">NVKD</span>'}</td>
       <td>${escapeHtml(emp.zaloId)}</td>
       <td><input type="number" min="0" value="${emp.monthlyQuota}" data-field="monthlyQuota" /></td>
       <td>${emp.used}</td>
@@ -393,6 +394,71 @@ document.getElementById("form-add-employee").addEventListener("submit", async (e
     showSaveMsg("form-add-employee", err.message, true);
   }
 });
+
+// -- Cach 3: tim va chon 1 nhom Zalo --
+let allGroups = [];
+let groupsLoaded = false;
+
+document.getElementById("btn-load-groups").addEventListener("click", async () => {
+  const btn = document.getElementById("btn-load-groups");
+  btn.disabled = true;
+  btn.textContent = "Dang tai...";
+  try {
+    const { groups } = await api("/api/zalo/groups");
+    allGroups = groups;
+    groupsLoaded = true;
+    document.getElementById("group-search").disabled = false;
+    renderGroupList();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Tai danh sach nhom";
+  }
+});
+
+document.getElementById("group-search").addEventListener("input", renderGroupList);
+
+function renderGroupList() {
+  if (!groupsLoaded) return;
+  const box = document.getElementById("group-list");
+  box.classList.remove("hidden");
+  const query = document.getElementById("group-search").value.trim().toLowerCase();
+  const addedGroupIds = new Set(allEmployees.filter((e) => e.isGroup).map((e) => e.zaloId));
+  const filtered = query ? allGroups.filter((g) => g.name.toLowerCase().includes(query)) : allGroups;
+
+  if (filtered.length === 0) {
+    box.innerHTML = `<p class="hint">${allGroups.length === 0 ? "Tai khoan Admin chua tham gia nhom nao." : "Khong tim thay nhom nao."}</p>`;
+    return;
+  }
+  box.innerHTML = filtered.map((g) => `
+    <div class="group-row" data-id="${escapeHtml(g.id)}">
+      <span>${escapeHtml(g.name)} <span class="hint">(${g.totalMember} thanh vien)</span></span>
+      ${addedGroupIds.has(g.id)
+        ? '<span class="badge ok">Da them</span>'
+        : '<button type="button" class="btn btn-add-group">Them</button>'}
+    </div>
+  `).join("");
+  box.querySelectorAll(".btn-add-group").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const groupId = btn.closest(".group-row").dataset.id;
+      const group = allGroups.find((g) => g.id === groupId);
+      if (!group) return;
+      btn.disabled = true;
+      try {
+        await api("/api/employees", {
+          method: "POST",
+          body: JSON.stringify({ zaloId: group.id, name: group.name, isGroup: true }),
+        });
+        await loadEmployees();
+        renderGroupList();
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+      }
+    });
+  });
+}
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({

@@ -1,5 +1,5 @@
 import { ThreadType, type Message } from "zca-js";
-import type { EmployeeRepo } from "../db/employeeRepo.js";
+import type { Employee, EmployeeRepo } from "../db/employeeRepo.js";
 import { logger } from "../logger.js";
 import type { ServiceRegistry } from "../runtime/serviceRegistry.js";
 import type { QuotaService } from "../quota/quotaService.js";
@@ -19,15 +19,26 @@ export class MessageRouter {
 
   async handle(message: Message): Promise<void> {
     if (message.isSelf) return; // bo qua tin nhan do chinh tai khoan Admin gui (tranh vong lap)
-    if (message.type !== ThreadType.User) return; // MVP: chi xu ly chat 1-1 voi Admin
+
+    const imageUrl = extractImageUrl(message);
+
+    if (message.type === ThreadType.Group) {
+      // Nhom: chi xu ly anh, va chi khi Admin da chon dang ky nhom nay lam "NVKD" tu trang Admin -
+      // khong tu dong nhan bat ky nhom nao tai khoan Admin dang tham gia (tranh spam/tra loi nham).
+      // Chua ho tro lenh van ban trong nhom (vd "han muc") vi can gan lenh do voi thanh vien hay
+      // ca nhom, ngoai pham vi tinh nang nay.
+      if (imageUrl) await this.handleGroupImage(message, imageUrl);
+      return;
+    }
+    if (message.type !== ThreadType.User) return;
 
     const senderId = message.data.uidFrom;
     const senderName = message.data.dName || senderId;
     const isAdmin = this.employeeRepo.isAdmin(senderId);
 
-    const imageUrl = extractImageUrl(message);
     if (imageUrl) {
-      await this.handleImage(message, senderId, senderName, imageUrl);
+      const employee = this.quotaService.registerOrGetEmployee(senderId, senderName);
+      await this.processImage(employee, message, imageUrl, senderId);
       return;
     }
 
@@ -37,14 +48,18 @@ export class MessageRouter {
     }
   }
 
-  private async handleImage(
-    message: Message,
-    senderId: string,
-    senderName: string,
-    imageUrl: string,
-  ): Promise<void> {
-    const employee = this.quotaService.registerOrGetEmployee(senderId, senderName);
+  private async handleGroupImage(message: Message, imageUrl: string): Promise<void> {
+    const group = this.employeeRepo.findByZaloId(message.threadId);
+    if (!group?.isGroup) return; // nhom chua duoc Admin them -> bo qua hoan toan, khong tra loi
+    await this.processImage(group, message, imageUrl, message.threadId);
+  }
 
+  private async processImage(
+    employee: Employee,
+    message: Message,
+    imageUrl: string,
+    contextId: string,
+  ): Promise<void> {
     let reply: string | undefined;
     try {
       const pipeline = this.serviceRegistry.getPipeline();
@@ -56,10 +71,10 @@ export class MessageRouter {
       // silent = anh khong phai giay dang ky xe/bao hiem xe -> bo qua, khong tra loi
       reply = result.silent ? undefined : result.message;
     } catch (err) {
-      logger.error({ err, senderId }, "loi khi xu ly anh tu Zalo");
+      logger.error({ err, contextId }, "loi khi xu ly anh tu Zalo");
       reply = err instanceof Error && err.message.includes("chua duoc cau hinh")
         ? "He thong OCR chua duoc cau hinh xong. Vui long lien he Admin."
-        : "Xin loi, khong tai duoc anh ban gui. Vui long thu gui lai.";
+        : "Xin loi, khong tai duoc anh vua gui. Vui long thu gui lai.";
     }
 
     if (reply) {

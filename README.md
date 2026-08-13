@@ -112,7 +112,10 @@ Trang Admin co 5 tab:
 4. **NVKD & han muc**: bang danh sach NVKD (tu dong xuat hien sau khi ho nhan tin lan dau). Admin
    khong can biet/nhap Zalo ID thu cong - co the **them NVKD bang so dien thoai**, he thong tu tra
    ra Zalo ID va ten (yeu cau da ket noi Zalo o tab 1); cach nhap Zalo ID truc tiep van con nhung
-   dat trong muc "nang cao" cho truong hop can thiet. Bang co o **tim kiem theo ten/ID**. Sua han
+   dat trong muc "nang cao" cho truong hop can thiet. Cung co the **tim va chon 1 nhom Zalo** ("Them
+   nhom Zalo") de coi ca nhom nhu 1 "NVKD" dung chung han muc - ai trong nhom gui anh vao cung duoc
+   OCR + tra loi ngay trong nhom, tien loi cho nhom co nhieu NVKD dung chung. Chi liet ke duoc cac
+   nhom ma tai khoan Zalo Admin da la thanh vien. Bang co o **tim kiem theo ten/ID**. Sua han
    muc, bat/tat hoat dong, danh dau la Admin (cho phep dung lenh quan tri qua Zalo) - luu ngay tren bang.
 5. **Nhat ky OCR**: xem cac lan OCR gan day (thanh cong/that bai) de kiem tra he thong hoat dong dung.
 
@@ -241,7 +244,8 @@ se phuc tap hon nhieu ma chat luong nhieu kha nang con te hon Gemini cho truong 
 
 ## Gioi han cua MVP / huong mo rong
 
-- Chi xu ly chat 1-1 (User), chua ho tro group.
+- Nhom Zalo (group) chi xu ly anh (chua ho tro lenh van ban nhu "han muc" trong nhom), va chi voi
+  nhom da duoc Admin chon them tu trang quan tri - khong tu dong nhan nhom moi.
 - Sheets API goi tuan tu (chua batch), du dung cho quy mo NVKD vua/nho.
 - Chua co retry/queue khi Gemini hoac Google Sheets tam thoi loi (hien tai bao loi va khong tru han
   muc, NVKD gui lai anh la duoc).

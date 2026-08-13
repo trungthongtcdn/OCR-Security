@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS employees (
   monthly_quota INTEGER NOT NULL,
   active INTEGER NOT NULL DEFAULT 1,
   is_admin INTEGER NOT NULL DEFAULT 0,
+  is_group INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -40,12 +41,21 @@ CREATE TABLE IF NOT EXISTS company_config (
 
 export type DB = Database.Database;
 
+/** Them cot con thieu vao 1 bang da ton tai - dung cho cac DB file da tao tu truoc khi cot nay xuat hien. */
+function ensureColumn(db: DB, table: string, column: string, definition: string): void {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (!columns.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
 export function openDatabase(file: string): DB {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new Database(file);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.exec(SCHEMA);
+  ensureColumn(db, "employees", "is_group", "INTEGER NOT NULL DEFAULT 0");
   return db;
 }
 

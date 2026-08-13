@@ -156,6 +156,22 @@
       </form>
     </details>
 
+    <details class="card">
+      <summary><strong>Them nhom Zalo - ca nhom dung chung 1 han muc</strong></summary>
+      <p class="hint">
+        Ai trong nhom gui anh vao cung duoc doc OCR va tra loi trong nhom, dung chung 1 han muc cua
+        ca nhom (coi nhom nhu 1 "NVKD"). Tai khoan Zalo Admin (o tab dau tien) phai da duoc them vao
+        nhom do tren dien thoai truoc, moi hien ra o day de chon.
+      </p>
+      <div class="actions">
+        <button id="btn-load-groups" type="button" class="btn">Tai danh sach nhom</button>
+      </div>
+      <label class="search-box">Tim nhom
+        <input type="text" id="group-search" placeholder="Go ten nhom de loc..." disabled />
+      </label>
+      <div id="group-list" class="lookup-result hidden"></div>
+    </details>
+
     <label class="search-box">Tim NVKD trong danh sach
       <input type="text" id="employee-search" placeholder="Go ten hoac Zalo ID de loc..." />
     </label>
@@ -163,7 +179,7 @@
     <table class="data-table" id="employee-table">
       <thead>
         <tr>
-          <th>Ten</th><th>Zalo ID</th><th>Han muc</th><th>Da dung</th><th>Con lai</th>
+          <th>Ten</th><th>Loai</th><th>Zalo ID</th><th>Han muc</th><th>Da dung</th><th>Con lai</th>
           <th>Hoat dong</th><th>Admin</th><th></th>
         </tr>
       </thead>

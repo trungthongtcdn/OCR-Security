@@ -103,6 +103,16 @@ export function createWebServer(deps: WebServerDeps): Express {
     }
   });
 
+  /** Liet ke nhom Zalo cua tai khoan Admin, de trang Admin tim/chon 1 nhom them lam "NVKD". */
+  app.get("/api/zalo/groups", async (_req, res) => {
+    try {
+      const groups = await zaloSession.listGroups();
+      res.json({ ok: true, groups });
+    } catch (err) {
+      res.status(400).json({ ok: false, error: errorMessage(err) });
+    }
+  });
+
   /** Test nhanh OCR tu trang Admin: doc anh bang Gemini (co retry model manh hon neu can) va
    * tra ve ket qua thuc, KHONG tru han muc NVKD va KHONG ghi vao Google Sheet - chi de kiem tra
    * chat luong doc truoc khi dung that. */
@@ -193,6 +203,7 @@ export function createWebServer(deps: WebServerDeps): Express {
         remaining: Math.max(0, emp.monthlyQuota - used),
         active: emp.active,
         isAdmin: emp.isAdmin,
+        isGroup: emp.isGroup,
       };
     });
     res.json({ month, employees });
@@ -215,6 +226,7 @@ export function createWebServer(deps: WebServerDeps): Express {
       name,
       monthlyQuota,
       isAdmin: Boolean(body.isAdmin),
+      isGroup: Boolean(body.isGroup),
     });
     res.status(201).json({ ok: true, employee });
   });
