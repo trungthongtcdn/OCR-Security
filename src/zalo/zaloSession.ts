@@ -14,6 +14,15 @@ import { logger } from "../logger.js";
 
 export type ZaloConnectionState = "logged_out" | "connecting" | "qr_pending" | "logged_in";
 
+/** Gom message + code (neu la loi tra ve tu server Zalo, vd ZaloApiError) thanh 1 chuoi de log/hien thi. */
+function errMessage(err: unknown): string {
+  if (err instanceof Error) {
+    const code = (err as { code?: unknown }).code;
+    return code !== undefined && code !== null ? `${err.message} (code ${code})` : err.message;
+  }
+  return String(err);
+}
+
 interface StoredSession {
   imei: string;
   userAgent: string;
@@ -231,10 +240,27 @@ export class ZaloSessionManager extends EventEmitter {
    */
   async listGroups(): Promise<Array<{ id: string; name: string; totalMember: number }>> {
     const api = this.getApi();
-    const all = await api.getAllGroups();
+
+    let all: Awaited<ReturnType<typeof api.getAllGroups>>;
+    try {
+      all = await api.getAllGroups();
+    } catch (err) {
+      logger.error({ err }, "listGroups: loi khi goi getAllGroups (lay danh sach ID nhom)");
+      throw new Error(`Lay danh sach nhom that bai (buoc 1/2 - getAllGroups): ${errMessage(err)}`);
+    }
+
     const groupIds = Object.keys(all.gridVerMap ?? {});
+    logger.debug({ groupCount: groupIds.length }, "listGroups: getAllGroups tra ve");
     if (groupIds.length === 0) return [];
-    const info = await api.getGroupInfo(groupIds);
+
+    let info: Awaited<ReturnType<typeof api.getGroupInfo>>;
+    try {
+      info = await api.getGroupInfo(groupIds);
+    } catch (err) {
+      logger.error({ err, groupIds }, "listGroups: loi khi goi getGroupInfo (lay ten cac nhom)");
+      throw new Error(`Lay danh sach nhom that bai (buoc 2/2 - getGroupInfo): ${errMessage(err)}`);
+    }
+
     return Object.values(info.gridInfoMap)
       .filter((group) => Boolean(group?.groupId && group.name))
       .map((group) => ({ id: group.groupId, name: group.name, totalMember: group.totalMember }))
