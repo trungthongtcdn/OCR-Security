@@ -237,6 +237,12 @@ export class ZaloSessionManager extends EventEmitter {
    * lam "NVKD" (nhieu nguoi trong nhom dung chung 1 han muc). Zalo khong co API tim kiem nhom
    * theo ten nhu tim nguoi dung qua so dien thoai - tai khoan Admin phai da duoc them vao nhom
    * do tren dien thoai truoc, trang Admin chi liet ke lai roi loc theo ten o phia trinh duyet.
+   *
+   * getGroupInfo goi 1 lan voi ca mang ID (batch) bi Zalo tra ve loi "Tham so khong hop le"
+   * (code 114) tren tai khoan thuc te, du getAllGroups (lay danh sach ID) van chay binh thuong -
+   * co ve Zalo tu choi ca batch neu co it nhat 1 ID "co van de" (nhom da roi/giai tan...). Nen goi
+   * getGroupInfo TUNG nhom 1 (giong cach findUser tra cuu 1 nguoi), bo qua rieng nhom nao loi thay
+   * vi huy toan bo danh sach.
    */
   async listGroups(): Promise<Array<{ id: string; name: string; totalMember: number }>> {
     const api = this.getApi();
@@ -253,18 +259,30 @@ export class ZaloSessionManager extends EventEmitter {
     logger.debug({ groupCount: groupIds.length }, "listGroups: getAllGroups tra ve");
     if (groupIds.length === 0) return [];
 
-    let info: Awaited<ReturnType<typeof api.getGroupInfo>>;
-    try {
-      info = await api.getGroupInfo(groupIds);
-    } catch (err) {
-      logger.error({ err, groupIds }, "listGroups: loi khi goi getGroupInfo (lay ten cac nhom)");
-      throw new Error(`Lay danh sach nhom that bai (buoc 2/2 - getGroupInfo): ${errMessage(err)}`);
-    }
+    const results = await Promise.allSettled(groupIds.map((id) => api.getGroupInfo(id)));
 
-    return Object.values(info.gridInfoMap)
-      .filter((group) => Boolean(group?.groupId && group.name))
-      .map((group) => ({ id: group.groupId, name: group.name, totalMember: group.totalMember }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const groups: Array<{ id: string; name: string; totalMember: number }> = [];
+    results.forEach((result, i) => {
+      if (result.status === "rejected") {
+        logger.warn(
+          { groupId: groupIds[i], err: result.reason },
+          "listGroups: bo qua 1 nhom loi khi lay ten (getGroupInfo)",
+        );
+        return;
+      }
+      for (const group of Object.values(result.value.gridInfoMap)) {
+        if (group?.groupId && group.name) {
+          groups.push({ id: group.groupId, name: group.name, totalMember: group.totalMember });
+        }
+      }
+    });
+
+    if (groups.length === 0 && groupIds.length > 0) {
+      throw new Error(
+        `Lay danh sach nhom that bai (buoc 2/2 - getGroupInfo): tat ca ${groupIds.length} nhom deu loi khi lay ten.`,
+      );
+    }
+    return groups.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
