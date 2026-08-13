@@ -224,6 +224,16 @@ export class ZaloSessionManager extends EventEmitter {
   }
 
   /**
+   * Lay toan bo ID nhom ma tai khoan Admin dang la thanh vien (khong kem ten/so thanh vien - goi
+   * nay rieng le hoat dong binh thuong). Dung cho nut "Dong bo toan bo nhom ngay" tu trang Admin,
+   * ket hop voi getGroupInfo() goi tung nhom 1 o duoi de dien ten ma khong bi Zalo tu choi ca lo.
+   */
+  async getAllGroupIds(): Promise<string[]> {
+    const all = await this.getApi().getAllGroups();
+    return Object.keys(all.gridVerMap ?? {});
+  }
+
+  /**
    * Lay ten + so thanh vien cua 1 nhom theo ID. Dung khi MessageRouter phat hien 1 nhom moi nhan
    * tin cho bot lan dau (xem GroupCandidateRepo) - chi goi 1 nhom/lan, KHONG goi hang loat kieu
    * "liet ke toan bo nhom cua tai khoan Admin": Zalo khong co API liet ke+tim kiem nhom hieu qua

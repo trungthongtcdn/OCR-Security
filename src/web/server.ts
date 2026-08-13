@@ -112,6 +112,28 @@ export function createWebServer(deps: WebServerDeps): Express {
     res.json({ ok: true, groups: groupCandidateRepo.listAll() });
   });
 
+  /**
+   * Dong bo ngay toan bo nhom ma tai khoan Admin dang la thanh vien vao cache (thay vi cho tung
+   * nhom tu xuat hien khi co ai nhan tin) - danh cho Admin muon tim/chon duoc ca nhom nao chua tung
+   * nhan tin cho bot. Goi getGroupInfo TUNG nhom 1 (khong goi hang loat) vi Zalo tung tu choi ca lo
+   * neu co 1 nhom "co van de" trong do - nhom nao loi rieng le thi bo qua, khong huy ca lan dong bo.
+   */
+  app.post("/api/zalo/groups/sync", async (_req, res) => {
+    try {
+      const groupIds = await zaloSession.getAllGroupIds();
+      const infos = await Promise.all(groupIds.map((id) => zaloSession.getGroupInfo(id)));
+      let synced = 0;
+      infos.forEach((info, i) => {
+        if (!info) return;
+        groupCandidateRepo.upsert(groupIds[i]!, info.name, info.totalMember);
+        synced++;
+      });
+      res.json({ ok: true, total: groupIds.length, synced });
+    } catch (err) {
+      res.status(400).json({ ok: false, error: errorMessage(err) });
+    }
+  });
+
   /** Test nhanh OCR tu trang Admin: doc anh bang Gemini (co retry model manh hon neu can) va
    * tra ve ket qua thuc, KHONG tru han muc NVKD va KHONG ghi vao Google Sheet - chi de kiem tra
    * chat luong doc truoc khi dung that. */

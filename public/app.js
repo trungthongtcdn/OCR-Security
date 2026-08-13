@@ -399,6 +399,23 @@ document.getElementById("form-add-employee").addEventListener("submit", async (e
 // -- Nhom Zalo da phat hien (nhom nao nhan tin cho bot se tu xuat hien, xem GroupCandidateRepo) --
 let allGroups = [];
 
+document.getElementById("btn-sync-groups").addEventListener("click", async () => {
+  const btn = document.getElementById("btn-sync-groups");
+  btn.disabled = true;
+  btn.textContent = "Dang dong bo...";
+  try {
+    const { total, synced } = await api("/api/zalo/groups/sync", { method: "POST" });
+    await loadGroups();
+    btn.textContent = `Da dong bo ${synced}/${total} nhom`;
+  } catch (err) {
+    alert(err.message);
+    btn.textContent = "Dong bo toan bo nhom ngay";
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = "Dong bo toan bo nhom ngay"; }, 4000);
+  }
+});
+
 async function loadGroups() {
   try {
     const { groups } = await api("/api/zalo/groups");
