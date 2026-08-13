@@ -14,15 +14,6 @@ import { logger } from "../logger.js";
 
 export type ZaloConnectionState = "logged_out" | "connecting" | "qr_pending" | "logged_in";
 
-/** Gom message + code (neu la loi tra ve tu server Zalo, vd ZaloApiError) thanh 1 chuoi de log/hien thi. */
-function errMessage(err: unknown): string {
-  if (err instanceof Error) {
-    const code = (err as { code?: unknown }).code;
-    return code !== undefined && code !== null ? `${err.message} (code ${code})` : err.message;
-  }
-  return String(err);
-}
-
 interface StoredSession {
   imei: string;
   userAgent: string;
@@ -233,56 +224,24 @@ export class ZaloSessionManager extends EventEmitter {
   }
 
   /**
-   * Liet ke cac nhom Zalo ma tai khoan Admin dang la thanh vien, de trang Admin tim/chon 1 nhom
-   * lam "NVKD" (nhieu nguoi trong nhom dung chung 1 han muc). Zalo khong co API tim kiem nhom
-   * theo ten nhu tim nguoi dung qua so dien thoai - tai khoan Admin phai da duoc them vao nhom
-   * do tren dien thoai truoc, trang Admin chi liet ke lai roi loc theo ten o phia trinh duyet.
-   *
-   * getGroupInfo goi 1 lan voi ca mang ID (batch) bi Zalo tra ve loi "Tham so khong hop le"
-   * (code 114) tren tai khoan thuc te, du getAllGroups (lay danh sach ID) van chay binh thuong -
-   * co ve Zalo tu choi ca batch neu co it nhat 1 ID "co van de" (nhom da roi/giai tan...). Nen goi
-   * getGroupInfo TUNG nhom 1 (giong cach findUser tra cuu 1 nguoi), bo qua rieng nhom nao loi thay
-   * vi huy toan bo danh sach.
+   * Lay ten + so thanh vien cua 1 nhom theo ID. Dung khi MessageRouter phat hien 1 nhom moi nhan
+   * tin cho bot lan dau (xem GroupCandidateRepo) - chi goi 1 nhom/lan, KHONG goi hang loat kieu
+   * "liet ke toan bo nhom cua tai khoan Admin": Zalo khong co API liet ke+tim kiem nhom hieu qua
+   * (khac voi tim nguoi qua so dien thoai), va thu goi getGroupInfo hang loat tren tai khoan thuc
+   * te da bi Zalo tu choi voi loi "Tham so khong hop le" (code 114) ngay khi co 1 nhom "co van de"
+   * (da roi/giai tan...) trong lo. Tra ve undefined neu loi thay vi nem loi, vi day chi la buoc lam
+   * dep ten hien thi, khong quan trong bang viec xu ly anh.
    */
-  async listGroups(): Promise<Array<{ id: string; name: string; totalMember: number }>> {
-    const api = this.getApi();
-
-    let all: Awaited<ReturnType<typeof api.getAllGroups>>;
+  async getGroupInfo(groupId: string): Promise<{ name: string; totalMember: number } | undefined> {
     try {
-      all = await api.getAllGroups();
+      const info = await this.getApi().getGroupInfo(groupId);
+      const group = info.gridInfoMap[groupId];
+      if (!group?.name) return undefined;
+      return { name: group.name, totalMember: group.totalMember };
     } catch (err) {
-      logger.error({ err }, "listGroups: loi khi goi getAllGroups (lay danh sach ID nhom)");
-      throw new Error(`Lay danh sach nhom that bai (buoc 1/2 - getAllGroups): ${errMessage(err)}`);
+      logger.warn({ err, groupId }, "khong lay duoc thong tin nhom Zalo (co the da roi/giai tan)");
+      return undefined;
     }
-
-    const groupIds = Object.keys(all.gridVerMap ?? {});
-    logger.debug({ groupCount: groupIds.length }, "listGroups: getAllGroups tra ve");
-    if (groupIds.length === 0) return [];
-
-    const results = await Promise.allSettled(groupIds.map((id) => api.getGroupInfo(id)));
-
-    const groups: Array<{ id: string; name: string; totalMember: number }> = [];
-    results.forEach((result, i) => {
-      if (result.status === "rejected") {
-        logger.warn(
-          { groupId: groupIds[i], err: result.reason },
-          "listGroups: bo qua 1 nhom loi khi lay ten (getGroupInfo)",
-        );
-        return;
-      }
-      for (const group of Object.values(result.value.gridInfoMap)) {
-        if (group?.groupId && group.name) {
-          groups.push({ id: group.groupId, name: group.name, totalMember: group.totalMember });
-        }
-      }
-    });
-
-    if (groups.length === 0 && groupIds.length > 0) {
-      throw new Error(
-        `Lay danh sach nhom that bai (buoc 2/2 - getGroupInfo): tat ca ${groupIds.length} nhom deu loi khi lay ten.`,
-      );
-    }
-    return groups.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**

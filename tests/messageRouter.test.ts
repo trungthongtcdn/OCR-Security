@@ -3,6 +3,7 @@ import { ThreadType, type Message } from "zca-js";
 import { CompanyRepo } from "../src/db/companyRepo.js";
 import { ensureCompanyConfig, openDatabase, type DB } from "../src/db/database.js";
 import { EmployeeRepo } from "../src/db/employeeRepo.js";
+import { GroupCandidateRepo } from "../src/db/groupCandidateRepo.js";
 import { UsageRepo } from "../src/db/usageRepo.js";
 import type { ServiceRegistry } from "../src/runtime/serviceRegistry.js";
 import { QuotaService } from "../src/quota/quotaService.js";
@@ -52,6 +53,7 @@ describe("MessageRouter (text commands)", () => {
       employeeRepo,
       companyRepo,
       fakeServiceRegistry,
+      new GroupCandidateRepo(db),
     );
   });
 
@@ -123,8 +125,10 @@ describe("MessageRouter (group images)", () => {
   let db: DB;
   let router: MessageRouter;
   let employeeRepo: EmployeeRepo;
+  let groupCandidateRepo: GroupCandidateRepo;
   let replies: string[];
   let processImageCalls: Array<{ zaloId: string }>;
+  let getGroupInfoCalls: string[];
 
   function fakeGroupImageMessage(uidFrom: string, dName: string): Message {
     return {
@@ -135,20 +139,35 @@ describe("MessageRouter (group images)", () => {
     } as Message;
   }
 
+  function fakeGroupTextMessage(uidFrom: string, dName: string, content: string): Message {
+    return {
+      type: ThreadType.Group,
+      threadId: GROUP_ID,
+      isSelf: false,
+      data: { uidFrom, dName, content } as Message["data"],
+    } as Message;
+  }
+
   beforeEach(() => {
     db = openDatabase(":memory:");
     ensureCompanyConfig(db, 100);
     employeeRepo = new EmployeeRepo(db);
+    groupCandidateRepo = new GroupCandidateRepo(db);
     const companyRepo = new CompanyRepo(db);
     const quotaService = new QuotaService(employeeRepo, new UsageRepo(db), companyRepo, () => 10);
 
     replies = [];
     processImageCalls = [];
+    getGroupInfoCalls = [];
     const fakeZaloSession = {
       reply: async (_threadId: string, _type: ThreadType, text: string) => {
         replies.push(text);
       },
       downloadImage: async () => ({ buffer: Buffer.from("fake"), mimeType: "image/jpeg" }),
+      getGroupInfo: async (groupId: string) => {
+        getGroupInfoCalls.push(groupId);
+        return { name: "Nhom Kinh Doanh", totalMember: 12 };
+      },
     } as unknown as ZaloSessionManager;
 
     const fakePipeline = {
@@ -167,6 +186,7 @@ describe("MessageRouter (group images)", () => {
       employeeRepo,
       companyRepo,
       fakeServiceRegistry,
+      groupCandidateRepo,
     );
   });
 
@@ -189,5 +209,22 @@ describe("MessageRouter (group images)", () => {
     expect(replies).toEqual(["da xong"]);
     expect(processImageCalls).toEqual([{ zaloId: GROUP_ID }]);
     expect(employeeRepo.findByZaloId("member-1")).toBeUndefined();
+  });
+
+  it("records an unregistered group as a candidate on any message, including plain text", async () => {
+    await router.handle(fakeGroupTextMessage("member-1", "A", "xin chao"));
+
+    expect(replies).toHaveLength(0); // van khong tra loi lenh van ban trong nhom
+    const candidates = groupCandidateRepo.listAll();
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]).toMatchObject({ groupId: GROUP_ID, name: "Nhom Kinh Doanh", totalMember: 12 });
+  });
+
+  it("does not re-fetch group info from Zalo once a group is already a known candidate", async () => {
+    await router.handle(fakeGroupImageMessage("member-1", "A"));
+    await router.handle(fakeGroupImageMessage("member-2", "B"));
+
+    expect(getGroupInfoCalls).toEqual([GROUP_ID]); // chi goi Zalo 1 lan, lan dau phat hien
+    expect(groupCandidateRepo.listAll()).toHaveLength(1);
   });
 });

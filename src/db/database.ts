@@ -37,6 +37,14 @@ CREATE TABLE IF NOT EXISTS company_config (
   monthly_quota INTEGER NOT NULL,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS zalo_group_candidates (
+  group_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  total_member INTEGER NOT NULL DEFAULT 0,
+  first_seen_at TEXT NOT NULL DEFAULT (datetime('now')),
+  last_seen_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 export type DB = Database.Database;

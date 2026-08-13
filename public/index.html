@@ -147,27 +147,27 @@
       <p class="hint">Chi dung khi khong tim duoc bang so dien thoai. Co the lay Zalo ID tu tab "Nhat ky OCR"
         sau khi NVKD da tung nhan tin/gui anh cho Zalo Admin.</p>
       <form id="form-add-employee">
-        <label>Zalo ID <input type="text" id="new-zalo-id" placeholder="zalo_id cua NVKD" required /></label>
+        <label>Zalo ID <input type="text" id="new-zalo-id" placeholder="zalo_id cua NVKD (hoac ID nhom)" required /></label>
         <label>Ten <input type="text" id="new-name" placeholder="Ten hien thi" required /></label>
         <label>Han muc/thang <input type="number" min="0" id="new-quota" placeholder="De trong = dung han muc mac dinh" /></label>
         <label class="checkbox"><input type="checkbox" id="new-is-admin" /> La Admin (duoc dung lenh quan tri qua Zalo)</label>
+        <label class="checkbox"><input type="checkbox" id="new-is-group" /> La nhom (nhieu nguoi dung chung han muc), Zalo ID o tren la ID nhom</label>
         <button type="submit" class="btn btn-primary">Them</button>
         <span class="save-msg" data-for="form-add-employee"></span>
       </form>
     </details>
 
-    <details class="card">
+    <details class="card" open>
       <summary><strong>Them nhom Zalo - ca nhom dung chung 1 han muc</strong></summary>
       <p class="hint">
         Ai trong nhom gui anh vao cung duoc doc OCR va tra loi trong nhom, dung chung 1 han muc cua
-        ca nhom (coi nhom nhu 1 "NVKD"). Tai khoan Zalo Admin (o tab dau tien) phai da duoc them vao
-        nhom do tren dien thoai truoc, moi hien ra o day de chon.
+        ca nhom (coi nhom nhu 1 "NVKD"). Nhom se <strong>TU DONG xuat hien</strong> o day ngay sau
+        khi co ai do trong nhom nhan tin/gui anh cho tai khoan Zalo Admin lan dau - khong can dong
+        bo hay tai lai danh sach thu cong. Neu can them ngay 1 nhom chua ai nhan tin, dung Cach 2 o
+        tren (nhap ID nhom + tick "La nhom").
       </p>
-      <div class="actions">
-        <button id="btn-load-groups" type="button" class="btn">Tai danh sach nhom</button>
-      </div>
-      <label class="search-box">Tim nhom
-        <input type="text" id="group-search" placeholder="Go ten nhom de loc..." disabled />
+      <label class="search-box">Tim nhom da phat hien
+        <input type="text" id="group-search" placeholder="Go ten nhom de loc..." />
       </label>
       <div id="group-list" class="lookup-result hidden"></div>
     </details>

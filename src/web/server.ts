@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import type { CompanyRepo } from "../db/companyRepo.js";
 import { type EmployeeRepo, type EmployeeUpdate } from "../db/employeeRepo.js";
+import type { GroupCandidateRepo } from "../db/groupCandidateRepo.js";
 import type { SettingsRepo } from "../db/settingsRepo.js";
 import { currentMonthKey, type UsageRepo } from "../db/usageRepo.js";
 import { logger } from "../logger.js";
@@ -17,6 +18,7 @@ export interface WebServerDeps {
   settingsRepo: SettingsRepo;
   zaloSession: ZaloSessionManager;
   serviceRegistry: ServiceRegistry;
+  groupCandidateRepo: GroupCandidateRepo;
   adminUser: string;
   adminPassword: string;
 }
@@ -53,7 +55,8 @@ function errorMessage(err: unknown): string {
 }
 
 export function createWebServer(deps: WebServerDeps): Express {
-  const { employeeRepo, usageRepo, companyRepo, settingsRepo, zaloSession, serviceRegistry } = deps;
+  const { employeeRepo, usageRepo, companyRepo, settingsRepo, zaloSession, serviceRegistry, groupCandidateRepo } =
+    deps;
   const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../public");
 
   const app = express();
@@ -103,14 +106,10 @@ export function createWebServer(deps: WebServerDeps): Express {
     }
   });
 
-  /** Liet ke nhom Zalo cua tai khoan Admin, de trang Admin tim/chon 1 nhom them lam "NVKD". */
-  app.get("/api/zalo/groups", async (_req, res) => {
-    try {
-      const groups = await zaloSession.listGroups();
-      res.json({ ok: true, groups });
-    } catch (err) {
-      res.status(400).json({ ok: false, error: errorMessage(err) });
-    }
+  /** Nhom Zalo da tung nhan tin cho bot (xem GroupCandidateRepo), de trang Admin tim/chon 1 nhom
+   * them lam "NVKD" - doc thang tu DB, khong goi Zalo, nen luon nhanh du co bao nhieu nhom. */
+  app.get("/api/zalo/groups", (_req, res) => {
+    res.json({ ok: true, groups: groupCandidateRepo.listAll() });
   });
 
   /** Test nhanh OCR tu trang Admin: doc anh bang Gemini (co retry model manh hon neu can) va

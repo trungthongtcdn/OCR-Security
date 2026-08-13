@@ -1,5 +1,6 @@
 import { ThreadType, type Message } from "zca-js";
 import type { Employee, EmployeeRepo } from "../db/employeeRepo.js";
+import type { GroupCandidateRepo } from "../db/groupCandidateRepo.js";
 import { logger } from "../logger.js";
 import type { ServiceRegistry } from "../runtime/serviceRegistry.js";
 import type { QuotaService } from "../quota/quotaService.js";
@@ -15,6 +16,7 @@ export class MessageRouter {
     private readonly employeeRepo: EmployeeRepo,
     private readonly companyRepo: CompanyRepo,
     private readonly serviceRegistry: ServiceRegistry,
+    private readonly groupCandidateRepo: GroupCandidateRepo,
   ) {}
 
   async handle(message: Message): Promise<void> {
@@ -25,8 +27,12 @@ export class MessageRouter {
     if (message.type === ThreadType.Group) {
       // Nhom: chi xu ly anh, va chi khi Admin da chon dang ky nhom nay lam "NVKD" tu trang Admin -
       // khong tu dong nhan bat ky nhom nao tai khoan Admin dang tham gia (tranh spam/tra loi nham).
+      // Nhung van ghi nhan MOI tin nhan (ke ca van ban, ke ca nhom chua duoc them) vao
+      // GroupCandidateRepo, de nhom moi tu xuat hien trong trang Admin ngay tu lan nhan tin dau
+      // tien - Admin khong can dong bo/tai lai danh sach nhom thu cong.
       // Chua ho tro lenh van ban trong nhom (vd "han muc") vi can gan lenh do voi thanh vien hay
       // ca nhom, ngoai pham vi tinh nang nay.
+      await this.recordGroupCandidate(message.threadId);
       if (imageUrl) await this.handleGroupImage(message, imageUrl);
       return;
     }
@@ -46,6 +52,13 @@ export class MessageRouter {
     if (text) {
       await this.handleText(message, senderId, senderName, text, isAdmin);
     }
+  }
+
+  /** Neu nhom da biet, chi cham last_seen_at (khong goi API). Neu la nhom moi, lay ten qua Zalo 1 lan. */
+  private async recordGroupCandidate(groupId: string): Promise<void> {
+    if (this.groupCandidateRepo.touch(groupId)) return;
+    const info = await this.zaloSession.getGroupInfo(groupId);
+    if (info) this.groupCandidateRepo.upsert(groupId, info.name, info.totalMember);
   }
 
   private async handleGroupImage(message: Message, imageUrl: string): Promise<void> {

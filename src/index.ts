@@ -2,6 +2,7 @@ import { loadConfig } from "./config.js";
 import { CompanyRepo } from "./db/companyRepo.js";
 import { ensureCompanyConfig, openDatabase } from "./db/database.js";
 import { EmployeeRepo } from "./db/employeeRepo.js";
+import { GroupCandidateRepo } from "./db/groupCandidateRepo.js";
 import { SettingsRepo } from "./db/settingsRepo.js";
 import { UsageRepo } from "./db/usageRepo.js";
 import { logger } from "./logger.js";
@@ -21,6 +22,7 @@ async function main(): Promise<void> {
   const usageRepo = new UsageRepo(db);
   const companyRepo = new CompanyRepo(db);
   const settingsRepo = new SettingsRepo(db);
+  const groupCandidateRepo = new GroupCandidateRepo(db);
 
   const quotaService = new QuotaService(employeeRepo, usageRepo, companyRepo, () =>
     settingsRepo.getDefaultEmployeeMonthlyQuota(),
@@ -34,6 +36,7 @@ async function main(): Promise<void> {
     employeeRepo,
     companyRepo,
     serviceRegistry,
+    groupCandidateRepo,
   );
 
   zaloSession.on("logged_in", () => {
@@ -52,6 +55,7 @@ async function main(): Promise<void> {
     settingsRepo,
     zaloSession,
     serviceRegistry,
+    groupCandidateRepo,
     adminUser: config.web.adminUser,
     adminPassword: config.web.adminPassword,
   });

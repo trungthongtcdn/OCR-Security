@@ -114,8 +114,11 @@ Trang Admin co 5 tab:
    ra Zalo ID va ten (yeu cau da ket noi Zalo o tab 1); cach nhap Zalo ID truc tiep van con nhung
    dat trong muc "nang cao" cho truong hop can thiet. Cung co the **tim va chon 1 nhom Zalo** ("Them
    nhom Zalo") de coi ca nhom nhu 1 "NVKD" dung chung han muc - ai trong nhom gui anh vao cung duoc
-   OCR + tra loi ngay trong nhom, tien loi cho nhom co nhieu NVKD dung chung. Chi liet ke duoc cac
-   nhom ma tai khoan Zalo Admin da la thanh vien. Bang co o **tim kiem theo ten/ID**. Sua han
+   OCR + tra loi ngay trong nhom, tien loi cho nhom co nhieu NVKD dung chung. Nhom **tu dong xuat
+   hien** trong danh sach de chon ngay tu tin nhan dau tien gui cho bot (khong goi API liet ke toan
+   bo nhom cua tai khoan Admin - co the rat nhieu/cham/loi - ma chi ghi nhan nhom nao thuc su nhan
+   tin), khong can dong bo thu cong khi co nhom moi; muon them ngay 1 nhom chua ai nhan tin thi dung
+   cach nhap Zalo ID truc tiep, tick "La nhom". Bang co o **tim kiem theo ten/ID**. Sua han
    muc, bat/tat hoat dong, danh dau la Admin (cho phep dung lenh quan tri qua Zalo) - luu ngay tren bang.
 5. **Nhat ky OCR**: xem cac lan OCR gan day (thanh cong/that bai) de kiem tra he thong hoat dong dung.
 

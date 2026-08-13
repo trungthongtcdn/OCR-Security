@@ -26,7 +26,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.classList.add("active");
     document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
     if (btn.dataset.tab === "settings") loadSettings();
-    if (btn.dataset.tab === "employees") loadEmployees();
+    if (btn.dataset.tab === "employees") { loadEmployees(); loadGroups(); }
     if (btn.dataset.tab === "logs") loadLogs();
   });
 });
@@ -376,15 +376,16 @@ document.getElementById("btn-lookup-phone").addEventListener("click", async () =
   }
 });
 
-// -- Cach 2: nhap Zalo ID truc tiep --
+// -- Cach 2: nhap Zalo ID truc tiep (NVKD hoac nhom) --
 document.getElementById("form-add-employee").addEventListener("submit", async (e) => {
   e.preventDefault();
   const zaloId = document.getElementById("new-zalo-id").value.trim();
   const name = document.getElementById("new-name").value.trim();
   const quotaRaw = document.getElementById("new-quota").value;
   const isAdmin = document.getElementById("new-is-admin").checked;
+  const isGroup = document.getElementById("new-is-group").checked;
   try {
-    const body = { zaloId, name, isAdmin };
+    const body = { zaloId, name, isAdmin, isGroup };
     if (quotaRaw) body.monthlyQuota = Number(quotaRaw);
     await api("/api/employees", { method: "POST", body: JSON.stringify(body) });
     document.getElementById("form-add-employee").reset();
@@ -395,32 +396,22 @@ document.getElementById("form-add-employee").addEventListener("submit", async (e
   }
 });
 
-// -- Cach 3: tim va chon 1 nhom Zalo --
+// -- Nhom Zalo da phat hien (nhom nao nhan tin cho bot se tu xuat hien, xem GroupCandidateRepo) --
 let allGroups = [];
-let groupsLoaded = false;
 
-document.getElementById("btn-load-groups").addEventListener("click", async () => {
-  const btn = document.getElementById("btn-load-groups");
-  btn.disabled = true;
-  btn.textContent = "Dang tai...";
+async function loadGroups() {
   try {
     const { groups } = await api("/api/zalo/groups");
     allGroups = groups;
-    groupsLoaded = true;
-    document.getElementById("group-search").disabled = false;
     renderGroupList();
   } catch (err) {
-    alert(err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Tai danh sach nhom";
+    // im lang: tab NVKD van dung duoc binh thuong ke ca khi buoc nay loi
   }
-});
+}
 
 document.getElementById("group-search").addEventListener("input", renderGroupList);
 
 function renderGroupList() {
-  if (!groupsLoaded) return;
   const box = document.getElementById("group-list");
   box.classList.remove("hidden");
   const query = document.getElementById("group-search").value.trim().toLowerCase();
@@ -428,13 +419,13 @@ function renderGroupList() {
   const filtered = query ? allGroups.filter((g) => g.name.toLowerCase().includes(query)) : allGroups;
 
   if (filtered.length === 0) {
-    box.innerHTML = `<p class="hint">${allGroups.length === 0 ? "Tai khoan Admin chua tham gia nhom nao." : "Khong tim thay nhom nao."}</p>`;
+    box.innerHTML = `<p class="hint">${allGroups.length === 0 ? "Chua co nhom nao nhan tin cho bot." : "Khong tim thay nhom nao."}</p>`;
     return;
   }
   box.innerHTML = filtered.map((g) => `
-    <div class="group-row" data-id="${escapeHtml(g.id)}">
+    <div class="group-row" data-id="${escapeHtml(g.groupId)}">
       <span>${escapeHtml(g.name)} <span class="hint">(${g.totalMember} thanh vien)</span></span>
-      ${addedGroupIds.has(g.id)
+      ${addedGroupIds.has(g.groupId)
         ? '<span class="badge ok">Da them</span>'
         : '<button type="button" class="btn btn-add-group">Them</button>'}
     </div>
@@ -442,13 +433,13 @@ function renderGroupList() {
   box.querySelectorAll(".btn-add-group").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const groupId = btn.closest(".group-row").dataset.id;
-      const group = allGroups.find((g) => g.id === groupId);
+      const group = allGroups.find((g) => g.groupId === groupId);
       if (!group) return;
       btn.disabled = true;
       try {
         await api("/api/employees", {
           method: "POST",
-          body: JSON.stringify({ zaloId: group.id, name: group.name, isGroup: true }),
+          body: JSON.stringify({ zaloId: group.groupId, name: group.name, isGroup: true }),
         });
         await loadEmployees();
         renderGroupList();
