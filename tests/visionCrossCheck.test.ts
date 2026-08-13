@@ -37,4 +37,11 @@ describe("findLabeledValue", () => {
     const text = "CHU XE: LE HUU DOAN";
     expect(findLabeledValue(text, ["SO KHUNG"])).toBeUndefined();
   });
+
+  it("stops at the next label when multiple fields share one line (no newlines, e.g. Gemini rawText)", () => {
+    const text =
+      "SỐ KHUNG: RN15 B29SA KEC003294 SỐ MÁY: D4DD ET 586812 LOẠI XE: ô tô khách TRỌNG TẢI: tấn";
+    expect(findLabeledValue(text, ["SO KHUNG"])).toBe("RN15 B29SA KEC003294");
+    expect(findLabeledValue(text, ["SO MAY"])).toBe("D4DD ET 586812");
+  });
 });
