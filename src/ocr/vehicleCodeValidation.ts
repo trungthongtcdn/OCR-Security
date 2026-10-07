@@ -18,10 +18,27 @@ import { normalizeCode } from "./visionCrossCheck.js";
 const VIN_LENGTH = 17;
 const VIN_FORBIDDEN_LETTERS_RE = /[IOQ]/;
 
+/**
+ * So khung/so may in/dap tren giay luon la CHU HOA khong dau (tieng Viet co dau chi xuat hien o
+ * cac nhan nhu "SO KHUNG", "SO MAY" ben canh) - neu gia tri RAW (truoc khi normalizeCode() bo dau
+ * va viet hoa) co chu thuong hoac dau tieng Viet, nhieu kha nang Gemini da vo tinh ghep nham 1 phan
+ * chu cua nhan/truong ke ben vao gia tri, giong dung loai loi ma visionCrossCheck.ts da tung bat
+ * duoc o van ban tho cua Cloud Vision.
+ */
+function suspiciousRawCharsIssue(rawValue: string): string[] {
+  if (/[a-z]/.test(rawValue)) {
+    return ["chua chu thuong - so khung/so may in/dap tren giay luon viet HOA, co the da ghep nham chu cua nhan/truong ben canh"];
+  }
+  if (/[^\x00-\x7F]/.test(rawValue)) {
+    return ["chua ky tu co dau (tieng Viet) - so khung/so may khong bao gio co dau, co the da ghep nham chu cua nhan/truong ben canh"];
+  }
+  return [];
+}
+
 export function validateChassisNumber(rawValue: string): string[] {
   if (!rawValue) return [];
   const code = normalizeCode(rawValue);
-  const issues: string[] = [];
+  const issues: string[] = [...suspiciousRawCharsIssue(rawValue)];
 
   const forbidden = code.match(VIN_FORBIDDEN_LETTERS_RE)?.[0];
   if (forbidden) {
@@ -39,14 +56,14 @@ export function validateChassisNumber(rawValue: string): string[] {
 }
 
 /**
- * So may khong co chuan quoc te chung (tuy nha san xuat), nen chi kiem tra duoc do dai hop ly -
- * qua ngan thuong la doc thieu ky tu, qua dai thuong la dinh them chu cua nhan/truong ben canh
- * (vi du loai sai o buoc tach nhan tren van ban tho - xem visionCrossCheck.ts).
+ * So may khong co chuan quoc te chung (tuy nha san xuat), nen chi kiem tra duoc do dai hop ly va
+ * dau hieu ghep nham nhan - qua ngan thuong la doc thieu ky tu, qua dai thuong la dinh them chu
+ * cua nhan/truong ben canh (vi du loai sai o buoc tach nhan tren van ban tho - xem visionCrossCheck.ts).
  */
 export function validateEngineNumber(rawValue: string): string[] {
   if (!rawValue) return [];
   const code = normalizeCode(rawValue);
-  const issues: string[] = [];
+  const issues: string[] = [...suspiciousRawCharsIssue(rawValue)];
 
   if (code.length < 5) {
     issues.push(`qua ngan (${code.length} ky tu) - co the da doc thieu`);
@@ -81,4 +98,38 @@ export function validateCrossFields(vehicle: {
     issues.push("So may va bien so dang giong het nhau - co the da doc nham truong");
   }
   return issues;
+}
+
+const VIN_TRANSLITERATION: Record<string, number> = {
+  A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8,
+  J: 1, K: 2, L: 3, M: 4, N: 5, P: 7, R: 9,
+  S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9,
+};
+const VIN_CHECK_DIGIT_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];
+
+/**
+ * Tinh ky tu kiem tra (check digit, vi tri 9) theo chuan VIN quoc te (ISO 3779 + bang trong so cua
+ * SAE J853) - CHI DUNG DE THAM KHAO/LOG, KHONG duoc dua vao lowConfidenceFields hay kich hoat doc
+ * lai (xem noi goi o ocrPipeline.ts). Ly do: check digit nay la yeu cau BAT BUOC THEO LUAT rieng
+ * cua thi truong Bac My (NHTSA 49 CFR 565 / SAE J853), KHONG duoc ISO 3779 (ban quoc te) bat buoc
+ * ap dung thong nhat o cac thi truong khac. Kiem chung thuc te: ngay ca so khung mau dang dung lam
+ * du lieu test trong du an nay ("RN2USHNLVNM076570") cung KHONG khop quy tac nay (vi tri 9 la chu
+ * "V", trong khi check digit hop le chi co the la 1 chu so hoac "X") - cho thay 1 phan dang ke so
+ * khung thuc te tai Viet Nam khong tuan thu quy tac nay, nen bat no thanh canh bao "can kiem tra"
+ * se tao qua nhieu canh bao sai (false positive) va lam giam long tin NVKD vao tinh nang.
+ *
+ * Tra ve undefined neu khong tinh duoc (khong du 17 ky tu, hoac chua ky tu khong hop le vi du
+ * I/O/Q - cac truong hop nay da duoc validateChassisNumber() bao cao rieng).
+ */
+export function computeVinCheckDigit(vin17: string): string | undefined {
+  if (vin17.length !== VIN_LENGTH) return undefined;
+  let sum = 0;
+  for (let i = 0; i < VIN_LENGTH; i++) {
+    const ch = vin17[i] ?? "";
+    const value = /[0-9]/.test(ch) ? Number(ch) : VIN_TRANSLITERATION[ch];
+    if (value === undefined) return undefined;
+    sum += value * VIN_CHECK_DIGIT_WEIGHTS[i]!;
+  }
+  const remainder = sum % 11;
+  return remainder === 10 ? "X" : String(remainder);
 }

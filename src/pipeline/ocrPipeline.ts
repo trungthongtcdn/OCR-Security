@@ -3,6 +3,7 @@ import { logger } from "../logger.js";
 import type { GeminiOcrClient, ImageInput } from "../ocr/geminiClient.js";
 import type { ExtractionResult, VehicleFields } from "../ocr/types.js";
 import {
+  computeVinCheckDigit,
   validateChassisNumber,
   validateCrossFields,
   validateEngineNumber,
@@ -143,6 +144,7 @@ export class OcrPipeline {
       flaggedFields.add("engineNumber");
       warnings.push(issue);
     }
+    this.logVinCheckDigitMismatch(v.chassisNumber, context);
 
     if (warnings.length === 0) return extraction;
     logger.info({ context, warnings }, "kiem tra dinh dang so khung/so may phat hien bat thuong");
@@ -151,6 +153,26 @@ export class OcrPipeline {
       lowConfidenceFields: Array.from(flaggedFields),
       formatWarnings: warnings,
     };
+  }
+
+  /**
+   * Ghi log (chi de tham khao/debug, KHONG danh dau can kiem tra, KHONG kich hoat doc lai) khi so
+   * khung khong khop check digit VIN - xem ly do khong dung lam canh bao chinh thuc trong
+   * computeVinCheckDigit() (vehicleCodeValidation.ts): yeu cau nay khong duoc tuan thu thong nhat
+   * o thi truong ngoai Bac My nen de tao canh bao sai neu bat len cho NVKD.
+   */
+  private logVinCheckDigitMismatch(chassisNumber: string, context: number | string): void {
+    if (!chassisNumber) return;
+    const code = normalizeCode(chassisNumber);
+    const expected = computeVinCheckDigit(code);
+    if (expected === undefined) return;
+    const actual = code[8];
+    if (actual !== expected) {
+      logger.debug(
+        { context, chassisNumber, actual, expected },
+        "so khung khong khop VIN check digit (chi tham khao, thi truong VN khong bat buoc tuan thu)",
+      );
+    }
   }
 
   /**

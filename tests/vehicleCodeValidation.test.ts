@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeVinCheckDigit,
   validateChassisNumber,
   validateCrossFields,
   validateEngineNumber,
@@ -29,6 +30,16 @@ describe("validateChassisNumber", () => {
   it("returns no issues for an empty value (nothing to validate)", () => {
     expect(validateChassisNumber("")).toEqual([]);
   });
+
+  it("flags a raw value containing lowercase letters (likely a leaked label fragment)", () => {
+    const issues = validateChassisNumber("RN2USHNLVNm076570"); // chu 'm' thuong lan vao
+    expect(issues.some((i) => i.includes("chu thuong"))).toBe(true);
+  });
+
+  it("flags a raw value containing Vietnamese diacritics (likely a leaked label fragment)", () => {
+    const issues = validateChassisNumber("SỐ RN2USHNLVNM076570"); // dinh nham chu "SỐ" cua nhan
+    expect(issues.some((i) => i.includes("co dau"))).toBe(true);
+  });
 });
 
 describe("validateEngineNumber", () => {
@@ -42,6 +53,11 @@ describe("validateEngineNumber", () => {
 
   it("flags a value that's too long", () => {
     expect(validateEngineNumber("D4DDET586812SOMAYDAI123").some((i) => i.includes("qua dai"))).toBe(true);
+  });
+
+  it("flags a raw value containing lowercase letters or Vietnamese diacritics", () => {
+    expect(validateEngineNumber("D4DDet586812").some((i) => i.includes("chu thuong"))).toBe(true);
+    expect(validateEngineNumber("MÁY D4DDET586812").some((i) => i.includes("co dau"))).toBe(true);
   });
 });
 
@@ -62,5 +78,19 @@ describe("validateCrossFields", () => {
       vehiclePlate: "29A-123.45",
     });
     expect(issues).toEqual([]);
+  });
+});
+
+describe("computeVinCheckDigit", () => {
+  it("matches the classic worked example from the VIN standard (1M8GDM9AXKP042788 -> X)", () => {
+    expect(computeVinCheckDigit("1M8GDM9AXKP042788")).toBe("X");
+  });
+
+  it("returns undefined for a value that isn't 17 characters", () => {
+    expect(computeVinCheckDigit("RN2USHNLVNM07657")).toBeUndefined();
+  });
+
+  it("returns undefined when the value contains characters outside the VIN alphabet (e.g. I/O/Q)", () => {
+    expect(computeVinCheckDigit("RN2USHNLVNMO76570")).toBeUndefined();
   });
 });

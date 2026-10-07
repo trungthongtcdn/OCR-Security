@@ -218,12 +218,23 @@ goc truoc khi dung lam ho so chinh thuc, du Gemini co bao "chac chan" hay khong.
 con tu kiem tra DINH DANG so khung doc duoc co hop le khong, dua tren tieu chuan VIN quoc te (ISO
 3779) ma hau het xe o to/xe may hien dai tai Viet Nam deu tuan theo: dung 17 ky tu, khong bao gio
 dung 3 chu `I`, `O`, `Q` (de tranh nham voi `1`, `0`), va phai la to hop ca chu lan so. So may khong
-co chuan quoc te nen chi kiem tra do dai hop ly (qua ngan/qua dai bat thuong). He thong cung so sanh
-cheo: neu so khung/so may/bien so doc ra **giong het nhau**, gan nhu chac chan la loi gan nham gia
-tri giua cac truong. Day la quy tac VE HINH DANG (khong xac nhan duoc noi dung dung/sai), nen khi
-phat hien bat thuong, he thong **khong tu sua** - chi danh dau truong do vao "can kiem tra" va **tu
-dong kich hoat doc lai bang model manh hon** (ke ca khi Gemini ban dau bao "chac chan"), giong het
-co che danh cho chu viet tay o tren. Xem `src/ocr/vehicleCodeValidation.ts`.
+co chuan quoc te nen chi kiem tra do dai hop ly (qua ngan/qua dai bat thuong). Ca 2 truong cung bi
+danh dau neu gia tri tho (truoc khi chuan hoa) chua chu thuong hoac dau tieng Viet - so khung/so may
+in/dap tren giay luon viet HOA khong dau, nen day la dau hieu Gemini da ghep nham 1 phan chu cua
+nhan ben canh (vi du "SO KHUNG:") vao gia tri. He thong cung so sanh cheo: neu so khung/so may/bien
+so doc ra **giong het nhau**, gan nhu chac chan la loi gan nham gia tri giua cac truong. Day la quy
+tac VE HINH DANG (khong xac nhan duoc noi dung dung/sai), nen khi phat hien bat thuong, he thong
+**khong tu sua** - chi danh dau truong do vao "can kiem tra" va **tu dong kich hoat doc lai bang
+model manh hon** (ke ca khi Gemini ban dau bao "chac chan"), giong het co che danh cho chu viet tay
+o tren. Xem `src/ocr/vehicleCodeValidation.ts`.
+
+*Quy tac co can nhac nhung KHONG bat:* VIN con co 1 "ky tu kiem tra" (check digit) o vi tri 9, tinh
+duoc bang 1 cong thuc checksum chuan (ISO 3779 + bang trong so SAE J853) - ham tinh da co san
+(`computeVinCheckDigit()`), nhung **chu dung de log tham khao**, khong dua vao canh bao hay kich
+hoat doc lai. Ly do: check digit nay la yeu cau bat buoc theo luat rieng cua thi truong Bac My
+(NHTSA), khong duoc ap dung thong nhat o cac thi truong khac - kiem chung thuc te, ngay ca so khung
+mau dang dung lam du lieu test trong du an nay cung khong khop quy tac nay, chung to kha nhieu xe
+tai Viet Nam khong tuan thu, nen bat canh bao nay se tao qua nhieu canh bao sai.
 
 ### Doi chieu cheo voi Google Cloud Vision (tuy chon, nang cao)
 
