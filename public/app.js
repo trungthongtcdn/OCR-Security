@@ -270,10 +270,19 @@ function renderTestOcrResult(result) {
       </ul>
     </div>
   ` : "";
+  const formatWarningsHtml = (result.formatWarnings || []).length > 0 ? `
+    <div class="status-box warn" style="margin-top: 10px;">
+      <strong>Kiem tra dinh dang so khung/so may (quy tac VIN) phat hien bat thuong:</strong>
+      <ul style="margin: 6px 0 0; padding-left: 18px;">
+        ${result.formatWarnings.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}
+      </ul>
+    </div>
+  ` : "";
   testOcrResult.innerHTML = `
     <p><strong>Loai giay to:</strong> ${escapeHtml(label)}
       &nbsp; <strong>Do tin cay:</strong> ${Math.round((result.confidence || 0) * 100)}%</p>
     <table class="data-table"><tbody>${rowsHtml}</tbody></table>
+    ${formatWarningsHtml}
     ${crossCheckHtml}
     ${result.rawText ? `
       <details style="margin-top: 10px;">

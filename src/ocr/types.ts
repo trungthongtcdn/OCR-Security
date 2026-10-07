@@ -37,4 +37,6 @@ export interface ExtractionResult {
   rawText: string;
   /** Ghi chu do doi chieu cheo voi Cloud Vision phat hien khac biet (neu co bat tinh nang nay). */
   crossCheckNotes?: string[];
+  /** Ghi chu do kiem tra dinh dang so khung/so may (quy tac VIN) phat hien bat thuong. */
+  formatWarnings?: string[];
 }

@@ -2,6 +2,11 @@ import type { Employee } from "../db/employeeRepo.js";
 import { logger } from "../logger.js";
 import type { GeminiOcrClient, ImageInput } from "../ocr/geminiClient.js";
 import type { ExtractionResult, VehicleFields } from "../ocr/types.js";
+import {
+  validateChassisNumber,
+  validateCrossFields,
+  validateEngineNumber,
+} from "../ocr/vehicleCodeValidation.js";
 import type { VisionOcrClient } from "../ocr/visionClient.js";
 import { findLabeledValue, normalizeCode } from "../ocr/visionCrossCheck.js";
 import type { QuotaService } from "../quota/quotaService.js";
@@ -105,14 +110,54 @@ export class OcrPipeline {
   async readImage(image: ImageInput, context: number | string = "test"): Promise<ExtractionResult> {
     const extraction = await this.gemini.extract(image);
     if (extraction.documentType === "unknown") return extraction;
-    const afterRetry = await this.retryWithPremiumIfLowConfidence(extraction, image, context);
+    const validated = this.applyFormatValidation(extraction, context);
+    const afterRetry = await this.retryWithPremiumIfLowConfidence(validated, image, context);
     return this.crossCheckWithVision(afterRetry, image, context);
   }
 
   /**
-   * Neu lan doc dau tien co truong do tin cay thap (thuong do chu viet tay), tu dong doc lai
-   * bang model manh nhat hien co va giu ket qua nao it truong nghi ngo hon. Bo qua neu model
-   * dang dung da la model manh nhat (tranh goi API 2 lan khong can thiet).
+   * Kiem tra dinh dang so khung/so may theo quy tac VIN (xem vehicleCodeValidation.ts). Them vao
+   * lowConfidenceFields ngay ca khi Gemini "tu tin" khong tu danh dau - nho vay buoc doc lai bang
+   * model manh hon ben duoi (retryWithPremiumIfLowConfidence) cung duoc kich hoat tu loi dinh
+   * dang, khong chi tu Gemini tu nhan biet chu viet tay.
+   */
+  private applyFormatValidation(extraction: ExtractionResult, context: number | string): ExtractionResult {
+    if (!extraction.vehicle) return extraction;
+    const v = extraction.vehicle;
+
+    const warnings: string[] = [];
+    const flaggedFields = new Set(extraction.lowConfidenceFields);
+
+    const chassisIssues = validateChassisNumber(v.chassisNumber);
+    if (chassisIssues.length > 0) {
+      flaggedFields.add("chassisNumber");
+      warnings.push(`So khung "${v.chassisNumber}": ${chassisIssues.join("; ")}`);
+    }
+    const engineIssues = validateEngineNumber(v.engineNumber);
+    if (engineIssues.length > 0) {
+      flaggedFields.add("engineNumber");
+      warnings.push(`So may "${v.engineNumber}": ${engineIssues.join("; ")}`);
+    }
+    for (const issue of validateCrossFields(v)) {
+      flaggedFields.add("chassisNumber");
+      flaggedFields.add("engineNumber");
+      warnings.push(issue);
+    }
+
+    if (warnings.length === 0) return extraction;
+    logger.info({ context, warnings }, "kiem tra dinh dang so khung/so may phat hien bat thuong");
+    return {
+      ...extraction,
+      lowConfidenceFields: Array.from(flaggedFields),
+      formatWarnings: warnings,
+    };
+  }
+
+  /**
+   * Neu lan doc dau tien co truong do tin cay thap (thuong do chu viet tay, hoac do kiem tra dinh
+   * dang so khung/so may o tren phat hien bat thuong), tu dong doc lai bang model manh nhat hien
+   * co va giu ket qua nao it truong nghi ngo hon. Bo qua neu model dang dung da la model manh nhat
+   * (tranh goi API 2 lan khong can thiet).
    */
   private async retryWithPremiumIfLowConfidence(
     extraction: ExtractionResult,
@@ -123,8 +168,10 @@ export class OcrPipeline {
     if (this.gemini === this.premiumGemini) return extraction;
 
     try {
-      const retry = await this.premiumGemini.extract(image);
-      if (retry.documentType !== "unknown" && retry.lowConfidenceFields.length < extraction.lowConfidenceFields.length) {
+      const rawRetry = await this.premiumGemini.extract(image);
+      if (rawRetry.documentType === "unknown") return extraction;
+      const retry = this.applyFormatValidation(rawRetry, context);
+      if (retry.lowConfidenceFields.length < extraction.lowConfidenceFields.length) {
         logger.info(
           { context, before: extraction.lowConfidenceFields.length, after: retry.lowConfidenceFields.length },
           "doc lai bang model manh hon do chu viet tay, ket qua tot hon",
@@ -224,6 +271,12 @@ export class OcrPipeline {
     ];
     if (extraction.lowConfidenceFields.length > 0) {
       lines.push(`(Luu y: kiem tra lai thu cong cac truong: ${extraction.lowConfidenceFields.join(", ")})`);
+    }
+    if (extraction.formatWarnings && extraction.formatWarnings.length > 0) {
+      lines.push("(Kiem tra dinh dang so khung/so may phat hien bat thuong, kiem tra lai ban goc:)");
+      for (const warning of extraction.formatWarnings) {
+        lines.push(`  - ${warning}`);
+      }
     }
     if (extraction.crossCheckNotes && extraction.crossCheckNotes.length > 0) {
       lines.push("(Doi chieu Cloud Vision phat hien khac biet, kiem tra lai ban goc:)");

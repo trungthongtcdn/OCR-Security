@@ -214,6 +214,17 @@ ky truoc khi tra loi thay vi doan nhanh, va giam `temperature` ve 0 de ket qua o
 la truong rui ro cao, tin nhan tra loi Zalo **luon** nhac NVKD doi chieu so khung/so may voi ban
 goc truoc khi dung lam ho so chinh thuc, du Gemini co bao "chac chan" hay khong.
 
+**Kiem tra dinh dang theo quy tac VIN:** ngoai viec dua vao Gemini tu danh gia do tin cay, he thong
+con tu kiem tra DINH DANG so khung doc duoc co hop le khong, dua tren tieu chuan VIN quoc te (ISO
+3779) ma hau het xe o to/xe may hien dai tai Viet Nam deu tuan theo: dung 17 ky tu, khong bao gio
+dung 3 chu `I`, `O`, `Q` (de tranh nham voi `1`, `0`), va phai la to hop ca chu lan so. So may khong
+co chuan quoc te nen chi kiem tra do dai hop ly (qua ngan/qua dai bat thuong). He thong cung so sanh
+cheo: neu so khung/so may/bien so doc ra **giong het nhau**, gan nhu chac chan la loi gan nham gia
+tri giua cac truong. Day la quy tac VE HINH DANG (khong xac nhan duoc noi dung dung/sai), nen khi
+phat hien bat thuong, he thong **khong tu sua** - chi danh dau truong do vao "can kiem tra" va **tu
+dong kich hoat doc lai bang model manh hon** (ke ca khi Gemini ban dau bao "chac chan"), giong het
+co che danh cho chu viet tay o tren. Xem `src/ocr/vehicleCodeValidation.ts`.
+
 ### Doi chieu cheo voi Google Cloud Vision (tuy chon, nang cao)
 
 Van de kho nhat quan sat duoc thuc te: Gemini co the doc SAI so khung/so may ma **khong** tu danh

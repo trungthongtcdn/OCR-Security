@@ -24,7 +24,13 @@ sai toan bo ma so - hau qua nghiem trong hon cac truong khac. Vi vay:
   va KHONG duoc tu y THEM hay BOT ky tu (vi du nhin lan chu O thanh 2 chu "OL" hoac nguoc lai).
 - Neu ban khong chac chan TUYET DOI 100% ve TUNG ky tu trong so khung/so may, BAT BUOC phai liet ke
   "chassisNumber"/"engineNumber" vao "lowConfidenceFields" - nguong chac chan cho 2 truong nay phai
-  cao hon nhieu so voi cac truong con lai (vi du ho ten, dia chi).`;
+  cao hon nhieu so voi cac truong con lai (vi du ho ten, dia chi).
+
+Tham khao them (khong tuyet doi, xe rat cu/dac biet co the khac): so khung xe o to/xe may hien dai
+tai Viet Nam thuong la ma VIN chuan quoc te - dung DUNG 17 ky tu, va KHONG BAO GIO dung 3 chu I, O,
+Q (de tranh nham voi 1, 0 - day la quy dinh cua chuan VIN). Neu ban doc ra duoc chu I, O hoac Q
+trong so khung, hoac do dai khac 17 ky tu, hay doc lai that ky truoc khi dien - rat co the ban dang
+nham voi 1, 0, hoac doc thieu/du ky tu.`;
 
 export const USER_PROMPT =
   "Hay boc tach thong tin tu anh giay to xe duoi day (giay dang ky xe hoac giay chung nhan bao hiem xe) theo dung schema JSON da cung cap. Neu anh khong phai 1 trong 2 loai giay to nay, tra ve documentType=\"unknown\".";
